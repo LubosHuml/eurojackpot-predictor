@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eurojackpot AI Forecast Engine</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="glow-container">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="logo-area">
+                <span class="logo-icon">▲</span>
+                <div class="title-meta">
+                    <h1>Eurojackpot <span class="accent-text">AI Forecast</span></h1>
+                    <p class="subtitle">Self-tuning LSTM neural network & magnitude pruning</p>
+                </div>
+            </div>
+            <div class="status-badges">
+                <div class="badge" id="badge-db">
+                    <span class="badge-dot"></span>
+                    <span class="badge-label">DB: Syncing...</span>
+                </div>
+                <div class="badge" id="badge-model">
+                    <span class="badge-dot"></span>
+                    <span class="badge-label">Model: Unknown</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- DASHBOARD OVERVIEW -->
+        <section class="overview-grid">
+            <div class="glass-card metric-card">
+                <div class="card-icon">📅</div>
+                <div class="metric-info">
+                    <span class="metric-label">Latest Synced Draw</span>
+                    <h3 id="stat-latest-date">Loading...</h3>
+                </div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="card-icon">📊</div>
+                <div class="metric-info">
+                    <span class="metric-label">Total Draws in DB</span>
+                    <h3 id="stat-total-draws">Loading...</h3>
+                </div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="card-icon">✂️</div>
+                <div class="metric-info">
+                    <span class="metric-label">Pruned Sparsity Level</span>
+                    <h3 id="stat-sparsity">80.0% Sparse</h3>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN LAYOUT -->
+        <main class="main-layout">
+            
+            <!-- LEFT COLUMN: COMBINATIONS -->
+            <div class="content-column left-col">
+                <div class="glass-card prediction-card">
+                    <div class="card-header">
+                        <h2>Locked Ticket Combinations (6 Rows)</h2>
+                        <div class="header-note" style="font-size: 13px; color: var(--text-secondary);">Deterministic sampling based on latest draw state</div>
+                    </div>
+
+                    <div class="bets-container">
+                        <div id="bets-list" class="bets-list">
+                            <!-- JS will inject combination rows here -->
+                            <div class="loading-spinner-container">
+                                <div class="spinner"></div>
+                                <p>Generating neural predictions...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card control-card">
+                    <h2>Control Center</h2>
+                    <p class="control-note">Manage database syncs and model training tasks. On free hostings, model retraining might hit memory bounds.</p>
+                    <div class="control-buttons">
+                        <button class="action-btn" id="btn-sync" onclick="triggerSync()">
+                            <span class="btn-text">Fetch Latest Draw</span>
+                            <div class="btn-spinner hidden"></div>
+                        </button>
+                        <button class="action-btn secondary" id="btn-train" onclick="triggerTrain()">
+                            <span class="btn-text">Retrain AI Model</span>
+                            <div class="btn-spinner hidden"></div>
+                        </button>
+                    </div>
+                    <div id="training-progress-banner" class="progress-banner hidden">
+                        <div class="progress-spinner"></div>
+                        <span id="training-progress-text">Model training in progress...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: STATS AND METRICS -->
+            <div class="content-column right-col">
+                <div class="glass-card bounds-card">
+                    <h2>Structural Estimates</h2>
+                    <p class="section-desc">Next-draw targets estimated by Model Sum and Model Counts</p>
+                    
+                    <div class="bounds-list">
+                        <div class="bound-item">
+                            <div class="bound-meta">
+                                <span class="bound-title">Predicted Main Sum</span>
+                                <span class="bound-value" id="val-pred-sum">Loading...</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="bar-pred-sum" style="width: 0%"></div>
+                            </div>
+                            <div class="bar-labels">
+                                <span>Min (25)</span>
+                                <span>Max (255)</span>
+                            </div>
+                        </div>
+
+                        <div class="grid-2-col">
+                            <div class="bound-item">
+                                <div class="bound-meta">
+                                    <span class="bound-title">Even Numbers</span>
+                                    <span class="bound-value" id="val-even-count">0</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar accent-bar" id="bar-even-count" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="bound-item">
+                                <div class="bound-meta">
+                                    <span class="bound-title">Odd Numbers</span>
+                                    <span class="bound-value" id="val-odd-count">0</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar accent-bar" id="bar-odd-count" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid-2-col">
+                            <div class="bound-item">
+                                <div class="bound-meta">
+                                    <span class="bound-title">Low (1-25)</span>
+                                    <span class="bound-value" id="val-low-count">0</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar accent-bar-2" id="bar-low-count" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="bound-item">
+                                <div class="bound-meta">
+                                    <span class="bound-title">High (26-50)</span>
+                                    <span class="bound-value" id="val-high-count">0</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar accent-bar-2" id="bar-high-count" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card metrics-card">
+                    <h2>Backtesting Performance</h2>
+                    <p class="section-desc">Reserved 50-draw validation test evaluation</p>
+                    
+                    <div class="metrics-grid">
+                        <div class="metric-row">
+                            <span class="metric-name">Model Sum MAE</span>
+                            <span class="metric-val" id="metric-sum-mae">Loading...</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-name">Model Counts MAE</span>
+                            <span class="metric-val" id="metric-counts-mae">Loading...</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-name">Main Numbers Top-5 Acc</span>
+                            <span class="metric-val" id="metric-main-top5">Loading...</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-name">Main Numbers Top-10 Acc</span>
+                            <span class="metric-val" id="metric-main-top10">Loading...</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-name">Main Numbers Top-15 Acc</span>
+                            <span class="metric-val" id="metric-main-top15">Loading...</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-name">Euro Numbers Top-2 Acc</span>
+                            <span class="metric-val" id="metric-euro-top2">Loading...</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-name">Euro Numbers Top-4 Acc</span>
+                            <span class="metric-val" id="metric-euro-top4">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <footer class="app-footer">
+            <p>Designed as an Elite Quantitative forecasting system. Always check coordinates with official drawings.</p>
+        </footer>
+    </div>
+
+    <!-- Notification overlay -->
+    <div id="toast" class="toast hidden">
+        <span id="toast-message">Notification message</span>
+    </div>
+
+    <!-- Custom JavaScript -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
