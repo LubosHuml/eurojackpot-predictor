@@ -107,12 +107,13 @@ def api_status():
 
 @app.route("/api/metrics", methods=["GET"])
 def api_metrics():
-    # If pre-computed metrics exist, load them
+    # If pre-computed metrics exist and have history_hits, load them
     if os.path.exists(METRICS_PATH):
         try:
             with open(METRICS_PATH, "r") as f:
                 metrics = json.load(f)
-            return jsonify(metrics)
+            if "history_hits" in metrics:
+                return jsonify(metrics)
         except Exception as e:
             pass
             
