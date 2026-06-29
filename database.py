@@ -7,7 +7,7 @@ def get_connection():
     return sqlite3.connect(DB_FILE)
 
 def init_db():
-    """Initializes the database and creates the draws table if it doesn't exist."""
+    """Initializes the database and creates the draws and tickets tables if they don't exist."""
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
@@ -20,6 +20,20 @@ def init_db():
             num5 INTEGER NOT NULL,
             euro1 INTEGER NOT NULL,
             euro2 INTEGER NOT NULL
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS tickets (
+            draw_date TEXT,
+            row_id INTEGER,
+            profile TEXT,
+            main_nums TEXT,
+            euro_nums TEXT,
+            confidence REAL,
+            matched_main TEXT,
+            matched_euro TEXT,
+            prize_tier TEXT,
+            PRIMARY KEY (draw_date, row_id)
         )
     """)
     conn.commit()
@@ -95,3 +109,66 @@ def get_latest_draw_date():
     row = cursor.fetchone()
     conn.close()
     return row[0] if (row and row[0]) else None
+
+def save_ticket(draw_date, row_id, profile, main_nums, euro_nums, confidence):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        main_str = ",".join(map(str, sorted(main_nums)))
+        euro_str = ",".join(map(str, sorted(euro_nums)))
+        cursor.execute("""
+            INSERT OR REPLACE INTO tickets (draw_date, row_id, profile, main_nums, euro_nums, confidence, matched_main, matched_euro, prize_tier)
+            VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NULL)
+        """, (draw_date, row_id, profile, main_str, euro_str, confidence))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error saving ticket: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_all_tickets():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT draw_date, row_id, profile, main_nums, euro_nums, confidence, matched_main, matched_euro, prize_tier
+        FROM tickets
+        ORDER BY draw_date DESC, row_id ASC
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+    
+    tickets = []
+    for r in rows:
+        tickets.append({
+            'draw_date': r[0],
+            'row_id': r[1],
+            'profile': r[2],
+            'main_nums': [int(x) for x in r[3].split(",")] if r[3] else [],
+            'euro_nums': [int(y) for y in r[4].split(",")] if r[4] else [],
+            'confidence': r[5],
+            'matched_main': [int(x) for x in r[6].split(",")] if r[6] else [],
+            'matched_euro': [int(y) for y in r[7].split(",")] if r[7] else [],
+            'prize_tier': r[8] if r[8] else "Pending"
+        })
+    return tickets
+
+def update_ticket_results(draw_date, row_id, matched_main, matched_euro, prize_tier):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        main_str = ",".join(map(str, sorted(matched_main))) if matched_main else ""
+        euro_str = ",".join(map(str, sorted(matched_euro))) if matched_euro else ""
+        cursor.execute("""
+            UPDATE tickets
+            SET matched_main = ?, matched_euro = ?, prize_tier = ?
+            WHERE draw_date = ? AND row_id = ?
+        """, (main_str, euro_str, prize_tier, draw_date, row_id))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error updating ticket results: {e}")
+        return False
+    finally:
+        conn.close()

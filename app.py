@@ -27,6 +27,48 @@ training_status = {
 MODEL_PATH = "eurojackpot_lstm_model.keras"
 METRICS_PATH = "metrics.json"
 
+from datetime import datetime, timedelta
+
+def get_next_draw_date(latest_draw_date_str):
+    try:
+        dt = datetime.strptime(latest_draw_date_str, "%Y-%m-%d")
+        if dt.weekday() == 1: # Tuesday
+            next_dt = dt + timedelta(days=3)
+        else: # Friday (or fallback)
+            next_dt = dt + timedelta(days=4)
+        return next_dt.strftime("%Y-%m-%d")
+    except Exception:
+        return "N/A"
+
+def get_draw_for_date(date_str):
+    try:
+        conn = database.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT num1, num2, num3, num4, num5, euro1, euro2 FROM draws WHERE date = ?", (date_str,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return [row[0], row[1], row[2], row[3], row[4]], [row[5], row[6]]
+    except Exception:
+        pass
+    return None
+
+def evaluate_pending_tickets():
+    """Scans all registered tickets that are pending evaluation and checks if their draw results are now available."""
+    try:
+        tickets = database.get_all_tickets()
+        for t in tickets:
+            if t['prize_tier'] == "Pending":
+                res = get_draw_for_date(t['draw_date'])
+                if res:
+                    drawn_main, drawn_euro = res
+                    matched_m = list(set(t['main_nums']) & set(drawn_main))
+                    matched_e = list(set(t['euro_nums']) & set(drawn_euro))
+                    prize_tier = f"{len(matched_m)}+{len(matched_e)}"
+                    database.update_ticket_results(t['draw_date'], t['row_id'], matched_m, matched_e, prize_tier)
+    except Exception as e:
+        print(f"Error evaluating pending tickets: {e}")
+
 def get_db_status():
     """Helper to check the state of the database and model files."""
     database.init_db()
@@ -40,9 +82,15 @@ def get_db_status():
         os.path.exists(train.SCALER_COUNTS_PATH)
     )
     
+    next_draw_date = get_next_draw_date(latest_date)
+    tickets = database.get_all_tickets()
+    is_registered = any(t['draw_date'] == next_draw_date for t in tickets)
+    
     return {
         "total_draws": len(draws),
         "latest_draw_date": latest_date if latest_date else "N/A",
+        "next_draw_date": next_draw_date,
+        "ticket_registered": is_registered,
         "model_trained": model_exists and scalers_exist,
         "training_state": "Training" if training_status["is_training"] else ("Ready" if (model_exists and scalers_exist) else "Untrained"),
         "error": training_status["error"]
@@ -209,6 +257,8 @@ def api_update():
     """Triggers an incremental scraper sync to fetch the latest draw results."""
     try:
         inserted = scraper.update_database(force_all=False)
+        # Scan and evaluate any pending tickets with the updated data
+        evaluate_pending_tickets()
         # Clear metrics cache on database change to force re-evaluation
         if inserted > 0 and os.path.exists(METRICS_PATH):
             os.remove(METRICS_PATH)
@@ -270,6 +320,94 @@ def api_train():
     thread.daemon = True
     thread.start()
     return jsonify({"success": True, "message": "Model training initiated in the background."})
+
+@app.route("/api/tickets", methods=["GET"])
+def api_tickets():
+    try:
+        tickets = database.get_all_tickets()
+        return jsonify(tickets)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/tickets/register", methods=["POST"])
+def api_tickets_register():
+    status = get_db_status()
+    if not status["model_trained"]:
+        return jsonify({"error": "Model is not trained yet."}), 400
+        
+    try:
+        model = tf.keras.models.load_model(MODEL_PATH)
+        scaler_x = joblib.load(train.SCALER_X_PATH)
+        scaler_sum = joblib.load(train.SCALER_SUM_PATH)
+        scaler_counts = joblib.load(train.SCALER_COUNTS_PATH)
+        
+        latest_date = status["latest_draw_date"]
+        next_draw_date = status["next_draw_date"]
+        
+        draws = database.get_all_draws()
+        df_features = features.compute_draw_features(draws)
+        
+        window_size = 10
+        feature_cols = [
+            'mean', 'std', 'median', 'sum', 'product_diff',
+            'even_count', 'odd_count', 'low_count', 'high_count',
+            'cpr_pp', 'cpr_bc', 'cpr_tc', 'vwap'
+        ]
+        num_features = df_features[feature_cols].values
+        main_nums = df_features[['num1', 'num2', 'num3', 'num4', 'num5']].values
+        euro_nums = df_features[['euro1', 'euro2']].values
+        
+        X_num_last = np.expand_dims(num_features[-window_size:], axis=0).astype(np.float32)
+        X_main_last = np.expand_dims(main_nums[-window_size:], axis=0).astype(np.int32)
+        X_euro_last = np.expand_dims(euro_nums[-window_size:], axis=0).astype(np.int32)
+        
+        X_num_scaled = train.transform_3d(scaler_x, X_num_last)
+        
+        pred_sum_scaled, pred_counts_scaled, pred_main_probs, pred_euro_probs = model.predict(
+            [X_num_scaled, X_main_last, X_euro_last],
+            verbose=0
+        )
+        
+        next_pred_sum = float(scaler_sum.inverse_transform(pred_sum_scaled)[0, 0])
+        next_pred_counts = scaler_counts.inverse_transform(pred_counts_scaled)[0]
+        
+        next_main_probs = pred_main_probs[0]
+        next_euro_probs = pred_euro_probs[0]
+        
+        import hashlib
+        seed_src = latest_date if latest_date else "default_seed_key"
+        seed = int(hashlib.md5(seed_src.encode('utf-8')).hexdigest(), 16) % (2**32)
+        np.random.seed(seed)
+        
+        bets_c = generator.generate_bets(next_main_probs, next_euro_probs, next_pred_sum, next_pred_counts, temperature=0.2, count=2)
+        bets_b = generator.generate_bets(next_main_probs, next_euro_probs, next_pred_sum, next_pred_counts, temperature=1.0, count=2)
+        bets_u = generator.generate_bets(next_main_probs, next_euro_probs, next_pred_sum, next_pred_counts, temperature=2.0, count=2)
+        
+        raw_bets = [
+            (bets_c[0], "Conservative"),
+            (bets_c[1], "Conservative"),
+            (bets_b[0], "Balanced"),
+            (bets_b[1], "Balanced"),
+            (bets_u[0], "Unique"),
+            (bets_u[1], "Unique")
+        ]
+        
+        max_p_m = float(np.max(next_main_probs))
+        max_p_e = float(np.max(next_euro_probs))
+        
+        for idx, (comb, profile) in enumerate(raw_bets):
+            m_nums = [int(x) for x in comb[0]]
+            e_nums = [int(y) for y in comb[1]]
+            
+            mean_p_m = float(np.mean([next_main_probs[x-1] for x in m_nums]))
+            mean_p_e = float(np.mean([next_euro_probs[y-1] for y in e_nums]))
+            confidence = (mean_p_m / max_p_m) * 60 + (mean_p_e / max_p_e) * 40
+            
+            database.save_ticket(next_draw_date, idx + 1, profile, m_nums, e_nums, round(confidence, 1))
+            
+        return jsonify({"success": True, "draw_date": next_draw_date})
+    except Exception as e:
+        return jsonify({"error": f"Failed to register ticket: {str(e)}"}), 500
 
 if __name__ == "__main__":
     # Render binds to PORT environment variable, locally we default to 5080 to avoid port conflicts

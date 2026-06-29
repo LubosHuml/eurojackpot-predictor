@@ -83,6 +83,10 @@
                                 <p>Generating neural predictions...</p>
                             </div>
                         </div>
+                        <button class="action-btn" id="btn-register" onclick="registerTicket()" style="margin-top: 20px; width: 100%;">
+                            <span class="btn-text">Register This Ticket for Next Draw</span>
+                            <div class="btn-spinner hidden"></div>
+                        </button>
                     </div>
                 </div>
 
@@ -102,6 +106,15 @@
                     <div id="training-progress-banner" class="progress-banner hidden">
                         <div class="progress-spinner"></div>
                         <span id="training-progress-text">Model training in progress...</span>
+                    </div>
+                </div>
+                
+                <div class="glass-card tracker-card">
+                    <h2>Ticket Tracker</h2>
+                    <p class="section-desc">Historical results and active bets registered in the system.</p>
+                    
+                    <div id="tickets-tracker-list" class="tickets-tracker-list" style="display: flex; flex-direction: column; gap: 14px; max-height: 350px; overflow-y: auto; padding-right: 4px;">
+                        <p style="color: var(--text-secondary); text-align: center; padding: 20px 0; font-size: 13px;">No tickets registered yet.</p>
                     </div>
                 </div>
             </div>

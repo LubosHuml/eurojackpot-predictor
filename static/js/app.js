@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchStatus();
     fetchMetrics();
     fetchPredictions();
+    fetchTickets();
 });
 
 // Fetch system status
@@ -42,7 +43,21 @@ async function fetchStatus() {
 
         // Disable train button if already training
         const btnTrain = document.getElementById("btn-train");
-        btnTrain.disabled = (data.training_state === "Training");
+        if (btnTrain) btnTrain.disabled = (data.training_state === "Training");
+        
+        // Update register ticket button
+        const btnReg = document.getElementById("btn-register");
+        if (btnReg) {
+            if (data.ticket_registered) {
+                btnReg.disabled = true;
+                btnReg.querySelector(".btn-text").textContent = `Ticket Registered for ${data.next_draw_date}`;
+                btnReg.classList.add("secondary");
+            } else {
+                btnReg.disabled = false;
+                btnReg.querySelector(".btn-text").textContent = `Register This Ticket for ${data.next_draw_date}`;
+                btnReg.classList.remove("secondary");
+            }
+        }
         
         // If training has completed and we were polling, refresh predictions
         if (pollIntervalId && data.training_state !== "Training") {
@@ -312,4 +327,156 @@ function showToast(message) {
     setTimeout(() => {
         toast.classList.add("hidden");
     }, 4000);
+}
+
+// Fetch and render registered tickets
+async function fetchTickets() {
+    const listContainer = document.getElementById("tickets-tracker-list");
+    if (!listContainer) return;
+    
+    try {
+        const res = await fetch("/api/tickets");
+        const tickets = await res.json();
+        
+        if (tickets.length === 0) {
+            listContainer.innerHTML = `<p style="color: var(--text-secondary); text-align: center; padding: 20px 0; font-size: 13px;">No tickets registered yet.</p>`;
+            return;
+        }
+        
+        const groups = {};
+        tickets.forEach(t => {
+            if (!groups[t.draw_date]) groups[t.draw_date] = [];
+            groups[t.draw_date].push(t);
+        });
+        
+        listContainer.innerHTML = "";
+        
+        Object.keys(groups).forEach(date => {
+            const rows = groups[date];
+            
+            const groupDiv = document.createElement("div");
+            groupDiv.className = "ticket-group";
+            groupDiv.style.border = "1px solid var(--border-color)";
+            groupDiv.style.borderRadius = "10px";
+            groupDiv.style.padding = "12px";
+            groupDiv.style.background = "rgba(255, 255, 255, 0.01)";
+            
+            const header = document.createElement("div");
+            header.style.display = "flex";
+            header.style.justify = "space-between";
+            header.style.alignItems = "center";
+            header.style.marginBottom = "8px";
+            header.style.borderBottom = "1px solid var(--border-color)";
+            header.style.paddingBottom = "6px";
+            
+            const dateLabel = document.createElement("span");
+            dateLabel.style.fontSize = "13px";
+            dateLabel.style.fontWeight = "600";
+            dateLabel.style.fontFamily = "var(--font-outfit)";
+            dateLabel.textContent = `Draw Date: ${date}`;
+            
+            const statusLabel = document.createElement("span");
+            statusLabel.style.fontSize = "10px";
+            statusLabel.style.padding = "2px 8px";
+            statusLabel.style.borderRadius = "10px";
+            statusLabel.style.fontWeight = "500";
+            
+            const isPending = rows.some(r => r.prize_tier === "Pending");
+            if (isPending) {
+                statusLabel.style.background = "rgba(234, 179, 8, 0.1)";
+                statusLabel.style.color = "var(--accent-gold)";
+                statusLabel.textContent = "Pending Results";
+            } else {
+                statusLabel.style.background = "rgba(16, 185, 129, 0.1)";
+                statusLabel.style.color = "#10b981";
+                statusLabel.textContent = "Evaluated";
+            }
+            
+            header.appendChild(dateLabel);
+            header.appendChild(statusLabel);
+            groupDiv.appendChild(header);
+            
+            const rowsList = document.createElement("div");
+            rowsList.style.display = "flex";
+            rowsList.style.flexDirection = "column";
+            rowsList.style.gap = "6px";
+            
+            rows.forEach(r => {
+                const rDiv = document.createElement("div");
+                rDiv.style.display = "flex";
+                rDiv.style.justify = "space-between";
+                rDiv.style.alignItems = "center";
+                rDiv.style.fontSize = "11px";
+                rDiv.style.color = "var(--text-secondary)";
+                
+                const meta = document.createElement("span");
+                meta.textContent = `Row #${r.row_id} (${r.profile})`;
+                rDiv.appendChild(meta);
+                
+                const balls = document.createElement("span");
+                balls.style.fontFamily = "monospace";
+                balls.style.color = "var(--text-primary)";
+                balls.textContent = `[${r.main_nums.join(",")}] + [${r.euro_nums.join(",")}]`;
+                rDiv.appendChild(balls);
+                
+                const badge = document.createElement("span");
+                badge.style.fontSize = "10px";
+                badge.style.fontWeight = "600";
+                
+                if (r.prize_tier === "Pending") {
+                    badge.textContent = "Pending";
+                    badge.style.color = "var(--text-secondary)";
+                } else if (r.prize_tier === "0+0") {
+                    badge.textContent = "0+0";
+                    badge.style.color = "var(--text-secondary)";
+                } else {
+                    badge.textContent = r.prize_tier;
+                    badge.style.color = "var(--accent-cyan)";
+                    badge.style.textShadow = "0 0 5px rgba(6, 182, 212, 0.5)";
+                }
+                rDiv.appendChild(badge);
+                rowsList.appendChild(rDiv);
+            });
+            
+            groupDiv.appendChild(rowsList);
+            listContainer.appendChild(groupDiv);
+        });
+        
+    } catch (err) {
+        console.error("Error fetching tickets:", err);
+    }
+}
+
+// Register the current predictions as a ticket for the upcoming draw
+async function registerTicket() {
+    const btn = document.getElementById("btn-register");
+    if (!btn) return;
+    
+    const text = btn.querySelector(".btn-text");
+    const spinner = btn.querySelector(".btn-spinner");
+    
+    btn.disabled = true;
+    text.textContent = "Registering...";
+    spinner.classList.remove("hidden");
+    
+    try {
+        const res = await fetch("/api/tickets/register", { method: "POST" });
+        const data = await res.json();
+        
+        if (data.success) {
+            showToast(`Ticket successfully registered for draw on ${data.draw_date}!`);
+            fetchStatus();
+            fetchTickets();
+        } else {
+            showToast("Failed to register ticket: " + data.error);
+            btn.disabled = false;
+            text.textContent = "Register This Ticket for Next Draw";
+        }
+    } catch (err) {
+        showToast("Network error registering ticket.");
+        btn.disabled = false;
+        text.textContent = "Register This Ticket for Next Draw";
+    } finally {
+        spinner.classList.add("hidden");
+    }
 }
