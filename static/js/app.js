@@ -2,6 +2,7 @@
 let currentProfile = 'conservative';
 let predictionsData = null;
 let pollIntervalId = null;
+let activeTicketTab = 'standard';
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", () => {
@@ -50,11 +51,13 @@ async function fetchStatus() {
         if (btnReg) {
             if (data.ticket_registered) {
                 btnReg.disabled = true;
-                btnReg.querySelector(".btn-text").textContent = `Ticket Registered for ${data.next_draw_date}`;
+                const regType = data.registered_type === 'system' ? 'System Ticket' : 'Standard Ticket';
+                btnReg.querySelector(".btn-text").textContent = `Ticket Registered (${regType}) for ${data.next_draw_date}`;
                 btnReg.classList.add("secondary");
             } else {
                 btnReg.disabled = false;
-                btnReg.querySelector(".btn-text").textContent = `Register This Ticket for ${data.next_draw_date}`;
+                const labelType = activeTicketTab === 'system' ? 'System Wheel' : 'This Ticket';
+                btnReg.querySelector(".btn-text").textContent = `Register ${labelType} for ${data.next_draw_date}`;
                 btnReg.classList.remove("secondary");
             }
         }
@@ -238,7 +241,7 @@ function renderBets() {
     const listContainer = document.getElementById("bets-list");
     if (!predictionsData) return;
     
-    const bets = predictionsData.bets;
+    const bets = activeTicketTab === 'system' ? predictionsData.system_bets : predictionsData.bets;
     listContainer.innerHTML = "";
     
     bets.forEach((bet) => {
@@ -537,7 +540,11 @@ async function registerTicket() {
     spinner.classList.remove("hidden");
     
     try {
-        const res = await fetch("/api/tickets/register", { method: "POST" });
+        const res = await fetch("/api/tickets/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: activeTicketTab })
+        });
         const data = await res.json();
         
         if (data.success) {
@@ -547,13 +554,46 @@ async function registerTicket() {
         } else {
             showToast("Failed to register ticket: " + data.error);
             btn.disabled = false;
-            text.textContent = "Register This Ticket for Next Draw";
+            text.textContent = activeTicketTab === 'system' ? "Register System Wheel for Next Draw" : "Register This Ticket for Next Draw";
         }
     } catch (err) {
         showToast("Network error registering ticket.");
         btn.disabled = false;
-        text.textContent = "Register This Ticket for Next Draw";
+        text.textContent = activeTicketTab === 'system' ? "Register System Wheel for Next Draw" : "Register This Ticket for Next Draw";
     } finally {
         spinner.classList.add("hidden");
     }
+}
+
+// Switches between Standard and System ticket tabs
+function switchTicketTab(tabType) {
+    activeTicketTab = tabType;
+    
+    const btnStandard = document.getElementById("tab-standard");
+    const btnSystem = document.getElementById("tab-system");
+    
+    if (tabType === 'system') {
+        btnSystem.classList.add("active");
+        btnSystem.style.color = "var(--accent-cyan)";
+        btnSystem.style.borderBottom = "2px solid var(--accent-cyan)";
+        btnSystem.style.fontWeight = "600";
+        
+        btnStandard.classList.remove("active");
+        btnStandard.style.color = "var(--text-secondary)";
+        btnStandard.style.borderBottom = "none";
+        btnStandard.style.fontWeight = "500";
+    } else {
+        btnStandard.classList.add("active");
+        btnStandard.style.color = "var(--accent-cyan)";
+        btnStandard.style.borderBottom = "2px solid var(--accent-cyan)";
+        btnStandard.style.fontWeight = "600";
+        
+        btnSystem.classList.remove("active");
+        btnSystem.style.color = "var(--text-secondary)";
+        btnSystem.style.borderBottom = "none";
+        btnSystem.style.fontWeight = "500";
+    }
+    
+    renderBets();
+    fetchStatus();
 }

@@ -84,13 +84,19 @@ def get_db_status():
     
     next_draw_date = get_next_draw_date(latest_date)
     tickets = database.get_all_tickets()
-    is_registered = any(t['draw_date'] == next_draw_date for t in tickets)
-    
+    next_tickets = [t for t in tickets if t['draw_date'] == next_draw_date]
+    is_registered = len(next_tickets) > 0
+    registered_type = "standard"
+    if is_registered:
+        if "System" in next_tickets[0]["profile"]:
+            registered_type = "system"
+            
     return {
         "total_draws": len(draws),
         "latest_draw_date": latest_date if latest_date else "N/A",
         "next_draw_date": next_draw_date,
         "ticket_registered": is_registered,
+        "registered_type": registered_type,
         "model_trained": model_exists and scalers_exist,
         "training_state": "Training" if training_status["is_training"] else ("Ready" if (model_exists and scalers_exist) else "Untrained"),
         "error": training_status["error"]
@@ -240,6 +246,49 @@ def api_predictions():
                 "confidence": round(confidence, 1)
             })
             
+        # SYSTEM TICKET GENERATION: 7-number covering wheel
+        top7_idx = np.argsort(next_main_probs)[-7:]
+        top7_nums = sorted([int(x + 1) for x in top7_idx])
+        top3_euro_idx = np.argsort(next_euro_probs)[-3:]
+        top3_euro = sorted([int(x + 1) for x in top3_euro_idx])
+        
+        wheel_indices = [
+            [0, 1, 2, 5, 6],
+            [0, 1, 3, 4, 5],
+            [0, 2, 3, 4, 6],
+            [1, 2, 3, 4, 5],
+            [1, 3, 4, 5, 6],
+            [0, 1, 2, 4, 6]
+        ]
+        
+        e1, e2, e3 = top3_euro
+        euro_pairs = [
+            [e1, e2],
+            [e1, e3],
+            [e2, e3],
+            [e1, e2],
+            [e1, e3],
+            [e2, e3]
+        ]
+        
+        system_bets_list = []
+        for idx, row in enumerate(wheel_indices):
+            m_nums = sorted([top7_nums[i] for i in row])
+            e_nums = sorted(euro_pairs[idx])
+            
+            mean_p_m = float(np.mean([next_main_probs[x-1] for x in m_nums]))
+            mean_p_e = float(np.mean([next_euro_probs[y-1] for y in e_nums]))
+            
+            confidence = (mean_p_m / max_p_m) * 60 + (mean_p_e / max_p_e) * 40
+            
+            system_bets_list.append({
+                "id": idx + 1,
+                "profile": f"System Row {idx+1}",
+                "main_nums": m_nums,
+                "euro_nums": e_nums,
+                "confidence": round(confidence, 1)
+            })
+            
         return jsonify({
             "estimated_sum": next_pred_sum,
             "estimated_counts": {
@@ -248,7 +297,8 @@ def api_predictions():
                 "low": float(next_pred_counts[2]),
                 "high": float(next_pred_counts[3])
             },
-            "bets": bets_list
+            "bets": bets_list,
+            "system_bets": system_bets_list
         })
     except Exception as e:
         return jsonify({"error": f"Failed to generate predictions: {str(e)}"}), 500
@@ -380,18 +430,52 @@ def api_tickets_register():
         seed = int(hashlib.md5(seed_src.encode('utf-8')).hexdigest(), 16) % (2**32)
         np.random.seed(seed)
         
-        bets_c = generator.generate_bets(next_main_probs, next_euro_probs, next_pred_sum, next_pred_counts, temperature=0.2, count=2)
-        bets_b = generator.generate_bets(next_main_probs, next_euro_probs, next_pred_sum, next_pred_counts, temperature=1.0, count=2)
-        bets_u = generator.generate_bets(next_main_probs, next_euro_probs, next_pred_sum, next_pred_counts, temperature=2.0, count=2)
+        req_data = request.get_json(silent=True) or {}
+        ticket_type = req_data.get("type", "standard")
         
-        raw_bets = [
-            (bets_c[0], "Conservative"),
-            (bets_c[1], "Conservative"),
-            (bets_b[0], "Balanced"),
-            (bets_b[1], "Balanced"),
-            (bets_u[0], "Unique"),
-            (bets_u[1], "Unique")
-        ]
+        if ticket_type == "system":
+            top7_idx = np.argsort(next_main_probs)[-7:]
+            top7_nums = sorted([int(x + 1) for x in top7_idx])
+            top3_euro_idx = np.argsort(next_euro_probs)[-3:]
+            top3_euro = sorted([int(x + 1) for x in top3_euro_idx])
+            
+            wheel_indices = [
+                [0, 1, 2, 5, 6],
+                [0, 1, 3, 4, 5],
+                [0, 2, 3, 4, 6],
+                [1, 2, 3, 4, 5],
+                [1, 3, 4, 5, 6],
+                [0, 1, 2, 4, 6]
+            ]
+            
+            e1, e2, e3 = top3_euro
+            euro_pairs = [
+                [e1, e2],
+                [e1, e3],
+                [e2, e3],
+                [e1, e2],
+                [e1, e3],
+                [e2, e3]
+            ]
+            
+            raw_bets = []
+            for idx, row in enumerate(wheel_indices):
+                m_nums = sorted([top7_nums[i] for i in row])
+                e_nums = sorted(euro_pairs[idx])
+                raw_bets.append(((m_nums, e_nums), f"System Row {idx+1}"))
+        else:
+            bets_c = generator.generate_bets(next_main_probs, next_euro_probs, next_pred_sum, next_pred_counts, temperature=0.2, count=2)
+            bets_b = generator.generate_bets(next_main_probs, next_euro_probs, next_pred_sum, next_pred_counts, temperature=1.0, count=2)
+            bets_u = generator.generate_bets(next_main_probs, next_euro_probs, next_pred_sum, next_pred_counts, temperature=2.0, count=2)
+            
+            raw_bets = [
+                (bets_c[0], "Conservative"),
+                (bets_c[1], "Conservative"),
+                (bets_b[0], "Balanced"),
+                (bets_b[1], "Balanced"),
+                (bets_u[0], "Unique"),
+                (bets_u[1], "Unique")
+            ]
         
         max_p_m = float(np.max(next_main_probs))
         max_p_e = float(np.max(next_euro_probs))
