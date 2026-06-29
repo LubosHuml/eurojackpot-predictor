@@ -3,6 +3,7 @@ let currentProfile = 'conservative';
 let predictionsData = null;
 let pollIntervalId = null;
 let activeTicketTab = 'standard';
+let currentGame = 'eurojackpot';
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", () => {
@@ -15,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // Fetch system status
 async function fetchStatus() {
     try {
-        const res = await fetch("/api/status");
+        const res = await fetch(`/api/status?game=${currentGame}`);
         const data = await res.json();
         
         // Update overview cards
@@ -84,7 +85,7 @@ async function fetchStatus() {
 // Fetch backtesting metrics
 async function fetchMetrics() {
     try {
-        const res = await fetch("/api/metrics");
+        const res = await fetch(`/api/metrics?game=${currentGame}`);
         const data = await res.json();
         
         if (data.error) {
@@ -187,7 +188,7 @@ async function fetchPredictions() {
     const listContainer = document.getElementById("bets-list");
     
     try {
-        const res = await fetch("/api/predictions");
+        const res = await fetch(`/api/predictions?game=${currentGame}`);
         const data = await res.json();
         
         if (data.error) {
@@ -287,18 +288,20 @@ function renderBets() {
             ballsGroup.appendChild(ball);
         });
         
-        // Divider
-        const divider = document.createElement("div");
-        divider.className = "divider-line";
-        ballsGroup.appendChild(divider);
-        
-        // Euro balls
-        euroNums.forEach(e => {
-            const ball = document.createElement("div");
-            ball.className = "ball euro";
-            ball.innerHTML = `<span>${e}</span>`;
-            ballsGroup.appendChild(ball);
-        });
+        if (euroNums && euroNums.length > 0) {
+            // Divider
+            const divider = document.createElement("div");
+            divider.className = "divider-line";
+            ballsGroup.appendChild(divider);
+            
+            // Euro balls
+            euroNums.forEach(e => {
+                const ball = document.createElement("div");
+                ball.className = "ball euro";
+                ball.innerHTML = `<span>${e}</span>`;
+                ballsGroup.appendChild(ball);
+            });
+        }
         
         row.appendChild(ballsGroup);
         
@@ -415,7 +418,7 @@ async function fetchTickets() {
     if (!listContainer) return;
     
     try {
-        const res = await fetch("/api/tickets");
+        const res = await fetch(`/api/tickets?game=${currentGame}`);
         const tickets = await res.json();
         
         if (tickets.length === 0) {
@@ -493,10 +496,17 @@ async function fetchTickets() {
                 meta.textContent = `Row #${r.row_id} (${r.profile})`;
                 rDiv.appendChild(meta);
                 
+                const mainList = r.main_nums || r.nums || [];
+                const euroList = r.euro_nums || [];
+                
                 const balls = document.createElement("span");
                 balls.style.fontFamily = "monospace";
                 balls.style.color = "var(--text-primary)";
-                balls.textContent = `[${r.main_nums.join(",")}] + [${r.euro_nums.join(",")}]`;
+                if (euroList.length > 0) {
+                    balls.textContent = `[${mainList.join(",")}] + [${euroList.join(",")}]`;
+                } else {
+                    balls.textContent = `[${mainList.join(",")}]`;
+                }
                 rDiv.appendChild(balls);
                 
                 const badge = document.createElement("span");
@@ -506,11 +516,15 @@ async function fetchTickets() {
                 if (r.prize_tier === "Pending") {
                     badge.textContent = "Pending";
                     badge.style.color = "var(--text-secondary)";
-                } else if (r.prize_tier === "0+0") {
-                    badge.textContent = "0+0";
+                } else if (r.prize_tier === "0+0" || r.prize_tier === "0") {
+                    badge.textContent = "0";
                     badge.style.color = "var(--text-secondary)";
                 } else {
-                    badge.textContent = r.prize_tier;
+                    if (currentGame === "sportka") {
+                        badge.textContent = `${r.prize_tier} tref`;
+                    } else {
+                        badge.textContent = r.prize_tier;
+                    }
                     badge.style.color = "var(--accent-cyan)";
                     badge.style.textShadow = "0 0 5px rgba(6, 182, 212, 0.5)";
                 }
@@ -543,7 +557,7 @@ async function registerTicket() {
         const res = await fetch("/api/tickets/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: activeTicketTab })
+            body: JSON.stringify({ game: currentGame, type: activeTicketTab })
         });
         const data = await res.json();
         
@@ -596,4 +610,60 @@ function switchTicketTab(tabType) {
     
     renderBets();
     fetchStatus();
+}
+
+function switchGame(gameType) {
+    currentGame = gameType;
+    
+    const btnEuro = document.getElementById("game-eurojackpot");
+    const btnSportka = document.getElementById("game-sportka");
+    
+    if (gameType === 'sportka') {
+        btnSportka.style.background = "rgba(0, 242, 254, 0.1)";
+        btnSportka.style.borderColor = "var(--accent-cyan)";
+        btnSportka.style.color = "var(--accent-cyan)";
+        
+        btnEuro.style.background = "rgba(255, 255, 255, 0.03)";
+        btnEuro.style.borderColor = "var(--border-color)";
+        btnEuro.style.color = "var(--text-secondary)";
+        
+        // Hide Euro metrics rows
+        document.getElementById("row-metric-euro2").style.display = "none";
+        document.getElementById("row-metric-euro4").style.display = "none";
+        
+        // Update header & subtitle
+        document.querySelector(".title-meta h1").innerHTML = 'Sportka <span class="accent-text">AI Forecast</span>';
+        document.querySelector(".title-meta p").textContent = 'Self-tuning LSTM neural network & magnitude pruning (6 main + supplementary)';
+    } else {
+        btnEuro.style.background = "rgba(0, 242, 254, 0.1)";
+        btnEuro.style.borderColor = "var(--accent-cyan)";
+        btnEuro.style.color = "var(--accent-cyan)";
+        
+        btnSportka.style.background = "rgba(255, 255, 255, 0.03)";
+        btnSportka.style.borderColor = "var(--border-color)";
+        btnSportka.style.color = "var(--text-secondary)";
+        
+        // Show Euro metrics rows
+        document.getElementById("row-metric-euro2").style.display = "flex";
+        document.getElementById("row-metric-euro4").style.display = "flex";
+        
+        document.querySelector(".title-meta h1").innerHTML = 'Eurojackpot <span class="accent-text">AI Forecast</span>';
+        document.querySelector(".title-meta p").textContent = 'Self-tuning LSTM neural network & magnitude pruning';
+    }
+    
+    document.getElementById("tab-system").textContent = gameType === 'sportka' ? 'System Wheel (8 numbers)' : 'System Wheel (7 numbers)';
+    
+    // Clear prediction container loader before fetch
+    document.getElementById("bets-list").innerHTML = `
+        <div class="loading-spinner-container">
+            <div class="spinner"></div>
+            <p>Generating neural predictions...</p>
+        </div>
+    `;
+    
+    // Refresh all data
+    fetchStatus();
+    fetchMetrics();
+    fetchPredictions();
+    fetchTickets();
 }

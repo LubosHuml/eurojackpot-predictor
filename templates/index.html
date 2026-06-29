@@ -41,6 +41,12 @@
             </div>
         </header>
 
+        <!-- GAME SELECTOR TAB -->
+        <div class="game-selector-container" style="display: flex; justify-content: center; gap: 12px; margin-bottom: 20px;">
+            <button class="game-btn active" id="game-eurojackpot" onclick="switchGame('eurojackpot')" style="background: rgba(0, 242, 254, 0.1); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-family: var(--font-outfit); font-size: 14px; font-weight: 600; cursor: pointer; padding: 8px 24px; border-radius: 8px; transition: all 0.2s;">Eurojackpot</button>
+            <button class="game-btn" id="game-sportka" onclick="switchGame('sportka')" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); color: var(--text-secondary); font-family: var(--font-outfit); font-size: 14px; font-weight: 600; cursor: pointer; padding: 8px 24px; border-radius: 8px; transition: all 0.2s;">Sportka</button>
+        </div>
+
         <!-- DASHBOARD OVERVIEW -->
         <section class="overview-grid">
             <div class="glass-card metric-card">
@@ -216,11 +222,11 @@
                             <span class="metric-name">Main Numbers Top-15 Acc</span>
                             <span class="metric-val" id="metric-main-top15">Loading...</span>
                         </div>
-                        <div class="metric-row">
+                        <div class="metric-row" id="row-metric-euro2">
                             <span class="metric-name">Euro Numbers Top-2 Acc</span>
                             <span class="metric-val" id="metric-euro-top2">Loading...</span>
                         </div>
-                        <div class="metric-row">
+                        <div class="metric-row" id="row-metric-euro4">
                             <span class="metric-name">Euro Numbers Top-4 Acc</span>
                             <span class="metric-val" id="metric-euro-top4">Loading...</span>
                         </div>
