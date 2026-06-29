@@ -97,6 +97,83 @@ async function fetchMetrics() {
         document.getElementById("metric-main-top15").textContent = `${(data.main_top15 * 100).toFixed(1)}%`;
         document.getElementById("metric-euro-top2").textContent = `${(data.euro_top2 * 100).toFixed(1)}%`;
         document.getElementById("metric-euro-top4").textContent = `${(data.euro_top4 * 100).toFixed(1)}%`;
+        
+        // Render accuracy chart
+        if (data.history_hits && data.history_hits.length > 0) {
+            const history = data.history_hits.slice(-25); // show last 25 draws
+            const labels = history.map(h => {
+                const parts = h.date.split("-");
+                return parts.length === 3 ? `${parts[1]}-${parts[2]}` : h.date;
+            });
+            const hitsTop10 = history.map(h => h.hits_top10);
+            const hitsTop5 = history.map(h => h.hits_top5);
+            
+            if (window.myAccuracyChart) {
+                window.myAccuracyChart.destroy();
+            }
+            
+            const ctx = document.getElementById('accuracyChart').getContext('2d');
+            window.myAccuracyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Hits in Top 10',
+                            data: hitsTop10,
+                            backgroundColor: 'rgba(6, 182, 212, 0.4)',
+                            borderColor: 'rgba(6, 182, 212, 1)',
+                            borderWidth: 1.5,
+                            borderRadius: 4,
+                            barPercentage: 0.6
+                        },
+                        {
+                            label: 'Hits in Top 5 (Single Bet)',
+                            data: hitsTop5,
+                            type: 'line',
+                            borderColor: 'rgba(234, 179, 8, 1)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(234, 179, 8, 1)',
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#94a3b8',
+                                font: { family: 'Outfit', size: 10 }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { family: 'Inter', size: 9 }
+                            }
+                        },
+                        y: {
+                            min: 0,
+                            max: 5,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: {
+                                stepSize: 1,
+                                color: '#94a3b8',
+                                font: { family: 'Inter', size: 9 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
     } catch (err) {
         console.error("Error fetching metrics:", err);
     }

@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Custom Style Sheet -->
     <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="glow-container">
@@ -217,6 +219,14 @@
                             <span class="metric-name">Euro Numbers Top-4 Acc</span>
                             <span class="metric-val" id="metric-euro-top4">Loading...</span>
                         </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card chart-card" style="margin-top: 24px;">
+                    <h2>Historical Accuracy</h2>
+                    <p class="section-desc">Hits in model's Top 10 predicted main numbers (validation set)</p>
+                    <div class="chart-container" style="position: relative; height:200px; width:100%">
+                        <canvas id="accuracyChart"></canvas>
                     </div>
                 </div>
             </div>

@@ -20,7 +20,7 @@ def compute_top_k_accuracy(y_true, y_pred_probs, k):
         
     return total_hits / total_drawn if total_drawn > 0 else 0.0
 
-def evaluate_model(model, X_num_raw, X_main, X_euro, y_sum_raw, y_counts_raw, y_main_logits, y_euro_logits, scaler_x, scaler_sum, scaler_counts):
+def evaluate_model(model, X_num_raw, X_main, X_euro, y_sum_raw, y_counts_raw, y_main_logits, y_euro_logits, scaler_x, scaler_sum, scaler_counts, val_dates=None):
     """
     Evaluates the model on validation data, performing inverse scaling on predictions
     and computing regression/classification metrics.
@@ -57,6 +57,38 @@ def evaluate_model(model, X_num_raw, X_main, X_euro, y_sum_raw, y_counts_raw, y_
     euro_top2 = compute_top_k_accuracy(y_euro_logits, pred_euro_probs, 2)
     euro_top4 = compute_top_k_accuracy(y_euro_logits, pred_euro_probs, 4)
     
+    # Calculate historical accuracy details for each draw
+    history_hits = []
+    for i in range(len(y_main_logits)):
+        actual_m_idx = np.where(y_main_logits[i] == 1.0)[0]
+        actual_e_idx = np.where(y_euro_logits[i] == 1.0)[0]
+        
+        pred_m = pred_main_probs[i]
+        pred_e = pred_euro_probs[i]
+        
+        top5_m = np.argsort(pred_m)[-5:]
+        top10_m = np.argsort(pred_m)[-10:]
+        top15_m = np.argsort(pred_m)[-15:]
+        
+        top2_e = np.argsort(pred_e)[-2:]
+        top4_e = np.argsort(pred_e)[-4:]
+        
+        hits_top5 = len(set(actual_m_idx).intersection(set(top5_m)))
+        hits_top10 = len(set(actual_m_idx).intersection(set(top10_m)))
+        hits_top15 = len(set(actual_m_idx).intersection(set(top15_m)))
+        
+        hits_euro2 = len(set(actual_e_idx).intersection(set(top2_e)))
+        hits_euro4 = len(set(actual_e_idx).intersection(set(top4_e)))
+        
+        history_hits.append({
+            "date": val_dates[i] if val_dates else f"Draw {i+1}",
+            "hits_top5": int(hits_top5),
+            "hits_top10": int(hits_top10),
+            "hits_top15": int(hits_top15),
+            "hits_euro2": int(hits_euro2),
+            "hits_euro4": int(hits_euro4)
+        })
+        
     return {
         "sum_mse": float(sum_mse),
         "sum_mae": float(sum_mae),
@@ -65,7 +97,8 @@ def evaluate_model(model, X_num_raw, X_main, X_euro, y_sum_raw, y_counts_raw, y_
         "main_top10": float(main_top10),
         "main_top15": float(main_top15),
         "euro_top2": float(euro_top2),
-        "euro_top4": float(euro_top4)
+        "euro_top4": float(euro_top4),
+        "history_hits": history_hits
     }
 
 def run_backtest(model, data_dict, scaler_x, scaler_sum, scaler_counts, val_split=50):
@@ -82,10 +115,12 @@ def run_backtest(model, data_dict, scaler_x, scaler_sum, scaler_counts, val_spli
     y_main_logits_val = data_dict['y_main_logits'][-val_split:]
     y_euro_logits_val = data_dict['y_euro_logits'][-val_split:]
     
+    val_dates = data_dict.get('dates', [])[-val_split:]
+    
     print(f"Running backtest evaluation on the last {val_split} draws...")
     metrics = evaluate_model(
         model, X_num_val, X_main_val, X_euro_val,
         y_sum_val, y_counts_val, y_main_logits_val, y_euro_logits_val,
-        scaler_x, scaler_sum, scaler_counts
+        scaler_x, scaler_sum, scaler_counts, val_dates=val_dates
     )
     return metrics

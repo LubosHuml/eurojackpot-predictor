@@ -156,5 +156,6 @@ def generate_sequences(df, window_size=10):
         'y_sum': np.array(y_sum, dtype=np.float32).reshape(-1, 1),
         'y_counts': np.array(y_counts, dtype=np.float32),
         'y_main_logits': np.array(y_main_logits, dtype=np.float32),
-        'y_euro_logits': np.array(y_euro_logits, dtype=np.float32)
+        'y_euro_logits': np.array(y_euro_logits, dtype=np.float32),
+        'dates': df.iloc[window_size:]['date'].values.tolist()
     }
