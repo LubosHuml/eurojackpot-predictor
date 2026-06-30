@@ -44,6 +44,9 @@ def get_wallet_state():
     url = f"https://api.bybit.com/v5/account/wallet-balance?{params}"
     try:
         res = requests.get(url, headers=headers)
+        if res.status_code != 200:
+            print(f"Bybit API Error (status {res.status_code}) fetching wallet-balance: {res.text[:200]}")
+            return 0.0, 12.0
         data = res.json()
         if data.get("retCode") == 0:
             coins = data["result"]["list"][0]["coin"]
@@ -83,6 +86,9 @@ def get_active_position(symbol):
     url = f"https://api.bybit.com/v5/position/list?{params}"
     try:
         res = requests.get(url, headers=headers)
+        if res.status_code != 200:
+            print(f"Bybit API Error (status {res.status_code}) fetching active positions for {symbol}: {res.text[:200]}")
+            return None, 0.0
         data = res.json()
         if data.get("retCode") == 0:
             pos_list = data["result"]["list"]
