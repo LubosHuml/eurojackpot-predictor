@@ -244,7 +244,20 @@ def run_execution_loop():
     print(f"Balances - Available USDT Margin: {usdt_avail:.2f}, Total Cash: {usdt_total:.2f}")
     
     trade_state = load_trade_state()
-    symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+    
+    # Close legacy positions for disabled assets (ETH and SOL) to prevent unmanaged risk
+    for sym in ["ETHUSDT", "SOLUSDT"]:
+        try:
+            pos_side, pos_size = get_active_position(sym)
+            if pos_side is not None and pos_size > 0.0:
+                print(f"[Cleanup] Closing legacy position for disabled symbol {sym} ({pos_side} size={pos_size})...")
+                close_res = close_futures_position(sym, pos_side, pos_size)
+                if close_res and close_res.get("retCode") == 0:
+                    send_alert(f"[AI Bot] Closed Legacy {sym}", f"Successfully closed orphaned position for {sym} ({pos_side} size={pos_size}) on Bybit.")
+        except Exception as e:
+            print(f"Error cleaning up disabled symbol {sym}: {e}")
+            
+    symbols = ["BTCUSDT"]
     
     # Precision decimal mapping for each contract
     qty_decimals = {
