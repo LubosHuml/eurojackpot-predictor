@@ -19,7 +19,44 @@ import sportka_models
 import sportka_train
 import sportka_backtest
 
+def start_crypto_scheduler():
+    """Starts a 24/7 daemon thread that runs crypto predictions and trade executions every 5 minutes."""
+    def loop():
+        import time
+        import socket
+        import subprocess
+        
+        # Try to bind to port 5081 to ensure only one worker process runs the loop
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.bind(('127.0.0.1', 5081))
+            s.listen(1)
+        except socket.error:
+            print("[Scheduler] Port 5081 is already bound. Another Gunicorn worker is running the scheduler. Exiting thread.")
+            return
+            
+        print("[Scheduler] Crypto 24/7 background loop started (Active Worker).")
+        # Initial sleep buffer to let Flask server bind and initialize
+        time.sleep(10)
+        while True:
+            try:
+                print("[Scheduler] Running price fetch and predictions (output_bridge.py)...")
+                subprocess.run(["python", "crypto/output_bridge.py"])
+                print("[Scheduler] Checking and executing orders (executor.py)...")
+                subprocess.run(["python", "crypto/executor.py"])
+            except Exception as e:
+                print(f"[Scheduler] Loop execution error: {e}")
+            # Run every 5 minutes (300 seconds)
+            time.sleep(300)
+            
+    t = threading.Thread(target=loop)
+    t.daemon = True
+    t.start()
+
 app = Flask(__name__, static_folder="static", template_folder="templates")
+
+# Start 24/7 Bybit automation thread at module load time (supports Gunicorn workers)
+start_crypto_scheduler()
 
 # Global state for background training task
 training_status = {
@@ -1019,32 +1056,6 @@ def api_tickets_register():
         except Exception as e:
             return jsonify({"error": f"Failed to register ticket: {str(e)}"}), 500
 
-def start_crypto_scheduler():
-    """Starts a 24/7 daemon thread that runs crypto predictions and trade executions every 5 minutes."""
-    def loop():
-        import time
-        import subprocess
-        print("[Scheduler] Crypto 24/7 background loop started.")
-        # Initial sleep buffer to let Flask server bind and initialize
-        time.sleep(10)
-        while True:
-            try:
-                print("[Scheduler] Running price fetch and predictions (output_bridge.py)...")
-                subprocess.run(["python", "crypto/output_bridge.py"])
-                print("[Scheduler] Checking and executing orders (executor.py)...")
-                subprocess.run(["python", "crypto/executor.py"])
-            except Exception as e:
-                print(f"[Scheduler] Loop execution error: {e}")
-            # Run every 5 minutes (300 seconds)
-            time.sleep(300)
-            
-    t = threading.Thread(target=loop)
-    t.daemon = True
-    t.start()
-
 if __name__ == "__main__":
-    # Start 24/7 Bybit automation thread
-    start_crypto_scheduler()
-    
     port = int(os.environ.get("PORT", 5080))
     app.run(host="0.0.0.0", port=port)
