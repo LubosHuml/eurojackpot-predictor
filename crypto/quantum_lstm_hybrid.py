@@ -5,8 +5,8 @@ import tensorflow as tf
 import joblib
 import sqlite3
 
-# Add project path to sys.path
-project_path = "c:\\Users\\Acer\\Desktop\\Euro"
+# Resolve project path dynamically
+project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_path not in sys.path:
     sys.path.insert(0, project_path)
 
@@ -23,9 +23,8 @@ def run_hybrid_predictions(count=6):
     """
     db_path = os.path.join(project_path, "eurojackpot.db")
     model_path = os.path.join(project_path, "eurojackpot_lstm_model.keras")
-    
     if not os.path.exists(db_path) or not os.path.exists(model_path):
-        return {"error": "Eurojackpot database or LSTM model not found."}
+        return {"error": f"Eurojackpot database or LSTM model not found. db_path={db_path} (exists: {os.path.exists(db_path)}), model_path={model_path} (exists: {os.path.exists(model_path)})"}
         
     # 1. Fetch latest draws
     draws = database.get_all_draws()
