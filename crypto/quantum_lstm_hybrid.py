@@ -93,10 +93,14 @@ def run_hybrid_predictions(count=6):
     avg_kinetic_vals = [f["avg_kinetic_energy"] for f in physical_map.values()]
     max_kinetic_vals = [f["max_kinetic_energy"] for f in physical_map.values()]
     std_kinetic_vals = [f["std_kinetic_energy"] for f in physical_map.values()]
+    col_freq_vals = [f["collision_frequency"] for f in physical_map.values()]
+    eject_speed_vals = [f["avg_ejection_speed"] for f in physical_map.values()]
     
-    global_avg_kinetic = np.mean(avg_kinetic_vals) if avg_kinetic_vals else 3.55
-    global_max_kinetic = np.mean(max_kinetic_vals) if max_kinetic_vals else 11.50
-    global_std_kinetic = np.mean(std_kinetic_vals) if std_kinetic_vals else 2.75
+    global_avg_kinetic = np.mean(avg_kinetic_vals) if avg_kinetic_vals else 13.0
+    global_max_kinetic = np.mean(max_kinetic_vals) if max_kinetic_vals else 35.0
+    global_std_kinetic = np.mean(std_kinetic_vals) if std_kinetic_vals else 9.8
+    global_avg_col = np.mean(col_freq_vals) if col_freq_vals else 260.0
+    global_avg_eject = np.mean(eject_speed_vals) if eject_speed_vals else 14.5
 
     # Construct 8 QRC features combining statistical distributions and machine physics
     inputs = []
@@ -104,13 +108,9 @@ def run_hybrid_predictions(count=6):
         past_draws = [d['main_nums'] for d in draws[i-5:i]]
         flat_past = np.array(past_draws).flatten()
         mean_val = np.mean(flat_past)
-        std_val = np.std(flat_past)
-        median_val = np.median(flat_past)
         sum_val = np.sum(past_draws[-1])
         even_count = sum(1 for x in past_draws[-1] if x % 2 == 0)
         high_count = sum(1 for x in past_draws[-1] if x > 25)
-        low_count = sum(1 for x in past_draws[-1] if x <= 25)
-        odd_count = sum(1 for x in past_draws[-1] if x % 2 != 0)
         
         # Get physical features for the last draw (i-1) if available
         last_draw_date = draws[i-1]['date']
@@ -118,10 +118,14 @@ def run_hybrid_predictions(count=6):
             p_avg = physical_map[last_draw_date]["avg_kinetic_energy"]
             p_max = physical_map[last_draw_date]["max_kinetic_energy"]
             p_std = physical_map[last_draw_date]["std_kinetic_energy"]
+            p_col = physical_map[last_draw_date]["collision_frequency"]
+            p_eject = physical_map[last_draw_date]["avg_ejection_speed"]
         else:
             p_avg = global_avg_kinetic
             p_max = global_max_kinetic
             p_std = global_std_kinetic
+            p_col = global_avg_col
+            p_eject = global_avg_eject
             
         f1 = (mean_val - 25.0) / 25.0
         f2 = (sum_val - 125.0) / 125.0
@@ -129,12 +133,10 @@ def run_hybrid_predictions(count=6):
         f4 = (high_count - 2.5) / 2.5
         
         # Normalize physical features to [-1, 1] range
-        f5 = (p_avg - 3.5) / 0.5
-        f6 = (p_max - 11.5) / 1.5
-        f7 = (p_std - 2.75) / 0.5
-        
-        # Standard deviation of number configurations as f8
-        f8 = (std_val - 14.4) / 14.4
+        f5 = (p_avg - 13.0) / 2.0
+        f6 = (p_max - 35.0) / 3.0
+        f7 = (p_col - 260.0) / 50.0
+        f8 = (p_eject - 14.5) / 3.0
         
         inputs.append([f1, f2, f3, f4, f5, f6, f7, f8])
     inputs = np.array(inputs)
@@ -183,18 +185,16 @@ def run_hybrid_predictions(count=6):
     hybrid_euro_probs = 0.55 * lstm_euro_probs + 0.45 * qrc_euro_probs
     hybrid_euro_probs /= np.sum(hybrid_euro_probs)
     
-    # 5. Monte Carlo Generation with structural filters (using softmax-transformed logs for generator)
-    pseudo_main_logits = np.log(hybrid_main_probs + 1e-12)
-    pseudo_euro_logits = np.log(hybrid_euro_probs + 1e-12)
+    import crypto.ticket_optimizer as ticket_optimizer
     
-    bets = generator.generate_bets(
-        main_logits=pseudo_main_logits,
-        euro_logits=pseudo_euro_logits,
+    # 5. Joint ticket optimization using Simulated Annealing
+    optimizer = ticket_optimizer.TicketOptimizer(
+        main_probs=hybrid_main_probs,
+        euro_probs=hybrid_euro_probs,
         pred_sum=lstm_sum,
-        pred_counts=lstm_counts,
-        temperature=0.8,
-        count=count
+        pred_counts=lstm_counts
     )
+    bets = optimizer.optimize(count=count, steps=5000)
     
     # Format results
     formatted_bets = []

@@ -1,345 +1,394 @@
 {
-    "Eurojackpot - 12. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 12. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.5167,
-        "max_kinetic_energy": 11.5086,
-        "std_kinetic_energy": 2.8106,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 16. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 16. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.6962,
-        "max_kinetic_energy": 11.6403,
-        "std_kinetic_energy": 2.8076,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 19. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 19. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.7001,
-        "max_kinetic_energy": 11.4624,
-        "std_kinetic_energy": 2.8254,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 2. 1. 2026 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 2. 1. 2026 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.3436,
-        "max_kinetic_energy": 11.4989,
-        "std_kinetic_energy": 2.6021,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 23. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 23. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.4588,
-        "max_kinetic_energy": 11.5172,
-        "std_kinetic_energy": 2.7524,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 26. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 26. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.5705,
-        "max_kinetic_energy": 11.487,
-        "std_kinetic_energy": 2.8203,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 30. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 30. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.4494,
-        "max_kinetic_energy": 11.4425,
-        "std_kinetic_energy": 2.6814,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 5. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 5. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.62,
-        "max_kinetic_energy": 11.4572,
-        "std_kinetic_energy": 2.7,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 6. 1. 2026 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 6. 1. 2026 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.6323,
-        "max_kinetic_energy": 11.441,
-        "std_kinetic_energy": 2.8021,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 9. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 9. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.4106,
-        "max_kinetic_energy": 11.4802,
-        "std_kinetic_energy": 2.8147,
-        "estimated_mix_seconds": 36.4
+    "Eurojackpot - 1. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 1. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 13.3274,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 10.2555,
+        "collision_frequency": 313,
+        "avg_ejection_speed": 16.227
     },
     "Eurojackpot - 10. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 10. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.7111,
-        "max_kinetic_energy": 11.56,
-        "std_kinetic_energy": 2.8153,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 12.6614,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 9.9659,
+        "collision_frequency": 265,
+        "avg_ejection_speed": 12.8104
     },
     "Eurojackpot - 11. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 11. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 1.9104,
-        "max_kinetic_energy": 19.367,
-        "std_kinetic_energy": 2.8702,
-        "estimated_mix_seconds": 26.8
-    },
-    "Eurojackpot - 12. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 12. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.5791,
-        "max_kinetic_energy": 11.4967,
-        "std_kinetic_energy": 2.7284,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 14. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 14. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.657,
-        "max_kinetic_energy": 11.5275,
-        "std_kinetic_energy": 2.9611,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 16. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 16. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.6017,
-        "max_kinetic_energy": 11.5383,
-        "std_kinetic_energy": 2.9199,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 17. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 17. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.731,
-        "max_kinetic_energy": 13.0034,
-        "std_kinetic_energy": 2.8569,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 18. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 18. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.3289,
-        "max_kinetic_energy": 11.5299,
-        "std_kinetic_energy": 2.5184,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 19. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 19. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.5472,
-        "max_kinetic_energy": 11.5317,
-        "std_kinetic_energy": 2.8365,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 2. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 2. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.6183,
-        "max_kinetic_energy": 11.5414,
-        "std_kinetic_energy": 2.7795,
-        "estimated_mix_seconds": 35.6
-    },
-    "Eurojackpot - 21. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 21. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.898,
-        "max_kinetic_energy": 11.4969,
-        "std_kinetic_energy": 2.8876,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 21. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 21. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.5446,
-        "max_kinetic_energy": 11.5004,
-        "std_kinetic_energy": 2.7297,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 23. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 23. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.8919,
-        "max_kinetic_energy": 14.911,
-        "std_kinetic_energy": 3.2199,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 24. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 24. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.5579,
-        "max_kinetic_energy": 11.5298,
-        "std_kinetic_energy": 2.7672,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 26. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 26. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.506,
-        "max_kinetic_energy": 11.5391,
-        "std_kinetic_energy": 2.7212,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 28. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 28. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.8045,
-        "max_kinetic_energy": 11.5421,
-        "std_kinetic_energy": 3.0544,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 28. 11. 2025 - Allwyn \u010cesko (1080p, h264) (1).mp4": {
-        "filename": "Eurojackpot - 28. 11. 2025 - Allwyn \u010cesko (1080p, h264) (1).mp4",
-        "avg_kinetic_energy": 3.5038,
-        "max_kinetic_energy": 11.5132,
-        "std_kinetic_energy": 2.5887,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 28. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 28. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.5038,
-        "max_kinetic_energy": 11.5132,
-        "std_kinetic_energy": 2.5887,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 4. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 4. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.6987,
-        "max_kinetic_energy": 11.5649,
-        "std_kinetic_energy": 2.9626,
-        "estimated_mix_seconds": 36.4
-    },
-    "Eurojackpot - 1. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
-        "filename": "Eurojackpot - 1. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.592,
-        "max_kinetic_energy": 11.5167,
-        "std_kinetic_energy": 2.6627,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 16.8805,
+        "max_kinetic_energy": 32.249,
+        "std_kinetic_energy": 7.9402,
+        "collision_frequency": 4,
+        "avg_ejection_speed": 23.6301
     },
     "Eurojackpot - 11. 7. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 11. 7. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.2126,
-        "max_kinetic_energy": 11.51,
-        "std_kinetic_energy": 2.5007,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 13.9109,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 9.7767,
+        "collision_frequency": 306,
+        "avg_ejection_speed": 15.9282
+    },
+    "Eurojackpot - 12. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 12. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 12.4603,
+        "max_kinetic_energy": 34.9285,
+        "std_kinetic_energy": 9.6391,
+        "collision_frequency": 262,
+        "avg_ejection_speed": 14.2425
+    },
+    "Eurojackpot - 12. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 12. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 12.8764,
+        "max_kinetic_energy": 35.609,
+        "std_kinetic_energy": 10.3494,
+        "collision_frequency": 258,
+        "avg_ejection_speed": 13.8576
+    },
+    "Eurojackpot - 14. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 14. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 12.5609,
+        "max_kinetic_energy": 35.609,
+        "std_kinetic_energy": 9.6526,
+        "collision_frequency": 320,
+        "avg_ejection_speed": 13.5719
     },
     "Eurojackpot - 15. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 15. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.7265,
-        "max_kinetic_energy": 11.5431,
-        "std_kinetic_energy": 2.8846,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 13.7043,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 10.139,
+        "collision_frequency": 239,
+        "avg_ejection_speed": 15.0941
+    },
+    "Eurojackpot - 16. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 16. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 13.1497,
+        "max_kinetic_energy": 35.609,
+        "std_kinetic_energy": 9.67,
+        "collision_frequency": 258,
+        "avg_ejection_speed": 12.28
+    },
+    "Eurojackpot - 16. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 16. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 13.5822,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 9.7858,
+        "collision_frequency": 222,
+        "avg_ejection_speed": 15.8886
+    },
+    "Eurojackpot - 17. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 17. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 12.684,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 9.9013,
+        "collision_frequency": 299,
+        "avg_ejection_speed": 14.039
+    },
+    "Eurojackpot - 18. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 18. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 12.8278,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 9.8208,
+        "collision_frequency": 208,
+        "avg_ejection_speed": 14.8129
     },
     "Eurojackpot - 18. 7. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 18. 7. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.4679,
-        "max_kinetic_energy": 11.5719,
-        "std_kinetic_energy": 2.5736,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 13.6194,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 10.2127,
+        "collision_frequency": 262,
+        "avg_ejection_speed": 17.276
+    },
+    "Eurojackpot - 19. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 19. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 13.5454,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 10.2542,
+        "collision_frequency": 270,
+        "avg_ejection_speed": 14.4125
+    },
+    "Eurojackpot - 19. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 19. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 12.0173,
+        "max_kinetic_energy": 35.4401,
+        "std_kinetic_energy": 9.7378,
+        "collision_frequency": 241,
+        "avg_ejection_speed": 15.1691
+    },
+    "Eurojackpot - 2. 1. 2026 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 2. 1. 2026 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 13.9666,
+        "max_kinetic_energy": 34.9857,
+        "std_kinetic_energy": 10.1921,
+        "collision_frequency": 251,
+        "avg_ejection_speed": 14.4309
+    },
+    "Eurojackpot - 2. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 2. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 12.3328,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 10.1893,
+        "collision_frequency": 254,
+        "avg_ejection_speed": 11.387
     },
     "Eurojackpot - 2. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 2. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.6584,
-        "max_kinetic_energy": 11.5133,
-        "std_kinetic_energy": 2.7734,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 14.1812,
+        "max_kinetic_energy": 34.9857,
+        "std_kinetic_energy": 10.0087,
+        "collision_frequency": 231,
+        "avg_ejection_speed": 16.4936
+    },
+    "Eurojackpot - 21. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 21. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 13.2658,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 9.8221,
+        "collision_frequency": 236,
+        "avg_ejection_speed": 17.4032
+    },
+    "Eurojackpot - 21. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 21. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 12.0149,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 9.6865,
+        "collision_frequency": 259,
+        "avg_ejection_speed": 11.787
     },
     "Eurojackpot - 22. 7. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 22. 7. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.4646,
-        "max_kinetic_energy": 11.496,
-        "std_kinetic_energy": 2.6311,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 12.7312,
+        "max_kinetic_energy": 35.609,
+        "std_kinetic_energy": 10.2324,
+        "collision_frequency": 247,
+        "avg_ejection_speed": 14.3444
     },
     "Eurojackpot - 22. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 22. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.7116,
-        "max_kinetic_energy": 13.0846,
-        "std_kinetic_energy": 2.9435,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 12.4436,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 9.576,
+        "collision_frequency": 261,
+        "avg_ejection_speed": 15.6317
+    },
+    "Eurojackpot - 23. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 23. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 12.5828,
+        "max_kinetic_energy": 35.609,
+        "std_kinetic_energy": 10.0141,
+        "collision_frequency": 220,
+        "avg_ejection_speed": 13.9645
+    },
+    "Eurojackpot - 23. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 23. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 13.6391,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 10.4105,
+        "collision_frequency": 245,
+        "avg_ejection_speed": 14.6575
+    },
+    "Eurojackpot - 24. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 24. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 12.8065,
+        "max_kinetic_energy": 35.609,
+        "std_kinetic_energy": 10.2121,
+        "collision_frequency": 277,
+        "avg_ejection_speed": 10.6595
     },
     "Eurojackpot - 25. 7. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 25. 7. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.4672,
-        "max_kinetic_energy": 11.5266,
-        "std_kinetic_energy": 2.4968,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 13.4948,
+        "max_kinetic_energy": 35.609,
+        "std_kinetic_energy": 10.3053,
+        "collision_frequency": 238,
+        "avg_ejection_speed": 14.9021
+    },
+    "Eurojackpot - 26. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 26. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 12.4913,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 9.8306,
+        "collision_frequency": 277,
+        "avg_ejection_speed": 10.3789
+    },
+    "Eurojackpot - 26. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 26. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 13.0224,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 10.0638,
+        "collision_frequency": 202,
+        "avg_ejection_speed": 15.7333
+    },
+    "Eurojackpot - 28. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 28. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 13.1019,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 10.1735,
+        "collision_frequency": 243,
+        "avg_ejection_speed": 12.8133
+    },
+    "Eurojackpot - 28. 11. 2025 - Allwyn \u010cesko (1080p, h264) (1).mp4": {
+        "filename": "Eurojackpot - 28. 11. 2025 - Allwyn \u010cesko (1080p, h264) (1).mp4",
+        "avg_kinetic_energy": 13.4166,
+        "max_kinetic_energy": 35.609,
+        "std_kinetic_energy": 10.239,
+        "collision_frequency": 295,
+        "avg_ejection_speed": 14.0357
+    },
+    "Eurojackpot - 28. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 28. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 13.4166,
+        "max_kinetic_energy": 35.609,
+        "std_kinetic_energy": 10.239,
+        "collision_frequency": 295,
+        "avg_ejection_speed": 14.0357
     },
     "Eurojackpot - 29. 7. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 29. 7. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.574,
-        "max_kinetic_energy": 11.491,
-        "std_kinetic_energy": 2.6269,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 13.3652,
+        "max_kinetic_energy": 34.9857,
+        "std_kinetic_energy": 9.5051,
+        "collision_frequency": 283,
+        "avg_ejection_speed": 14.3692
     },
     "Eurojackpot - 29. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 29. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.5112,
-        "max_kinetic_energy": 11.5409,
-        "std_kinetic_energy": 2.6706,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 12.9481,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 9.7215,
+        "collision_frequency": 221,
+        "avg_ejection_speed": 16.3844
+    },
+    "Eurojackpot - 30. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 30. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 13.9432,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 10.1021,
+        "collision_frequency": 254,
+        "avg_ejection_speed": 16.7038
+    },
+    "Eurojackpot - 4. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 4. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 12.8676,
+        "max_kinetic_energy": 35.609,
+        "std_kinetic_energy": 9.7981,
+        "collision_frequency": 260,
+        "avg_ejection_speed": 12.9108
+    },
+    "Eurojackpot - 5. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 5. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 12.7534,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 9.9388,
+        "collision_frequency": 299,
+        "avg_ejection_speed": 14.677
     },
     "Eurojackpot - 5. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 5. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.4674,
-        "max_kinetic_energy": 11.5201,
-        "std_kinetic_energy": 2.6001,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 13.3104,
+        "max_kinetic_energy": 35.609,
+        "std_kinetic_energy": 9.7235,
+        "collision_frequency": 241,
+        "avg_ejection_speed": 13.2983
     },
     "Eurojackpot - 5. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 5. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.6712,
-        "max_kinetic_energy": 11.4801,
-        "std_kinetic_energy": 2.8414,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 13.3195,
+        "max_kinetic_energy": 35.4401,
+        "std_kinetic_energy": 9.7195,
+        "collision_frequency": 282,
+        "avg_ejection_speed": 14.3123
+    },
+    "Eurojackpot - 6. 1. 2026 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 6. 1. 2026 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 12.6027,
+        "max_kinetic_energy": 35.4401,
+        "std_kinetic_energy": 9.8412,
+        "collision_frequency": 257,
+        "avg_ejection_speed": 14.6607
     },
     "Eurojackpot - 7. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 7. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.5299,
-        "max_kinetic_energy": 11.565,
-        "std_kinetic_energy": 2.8112,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 13.1647,
+        "max_kinetic_energy": 35.609,
+        "std_kinetic_energy": 10.1593,
+        "collision_frequency": 254,
+        "avg_ejection_speed": 14.0722
     },
     "Eurojackpot - 7. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 7. 11. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.4432,
-        "max_kinetic_energy": 11.5075,
-        "std_kinetic_energy": 2.5658,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 12.6104,
+        "max_kinetic_energy": 35.4401,
+        "std_kinetic_energy": 10.037,
+        "collision_frequency": 268,
+        "avg_ejection_speed": 14.5746
+    },
+    "Eurojackpot - 9. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
+        "filename": "Eurojackpot - 9. 12. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
+        "avg_kinetic_energy": 12.498,
+        "max_kinetic_energy": 35.3836,
+        "std_kinetic_energy": 9.8991,
+        "collision_frequency": 308,
+        "avg_ejection_speed": 12.5115
     },
     "Eurojackpot - 9. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot - 9. 9. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.601,
-        "max_kinetic_energy": 11.571,
-        "std_kinetic_energy": 2.7116,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 12.7046,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 10.2681,
+        "collision_frequency": 260,
+        "avg_ejection_speed": 19.3428
     },
     "Eurojackpot 12. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot 12. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 2.2598,
-        "max_kinetic_energy": 6.1977,
-        "std_kinetic_energy": 1.8507,
-        "estimated_mix_seconds": 4.8
+        "avg_kinetic_energy": 12.3895,
+        "max_kinetic_energy": 34.2345,
+        "std_kinetic_energy": 9.3735,
+        "collision_frequency": 80,
+        "avg_ejection_speed": 2.5
     },
     "Eurojackpot 15. 7. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot 15. 7. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.3922,
-        "max_kinetic_energy": 11.5124,
-        "std_kinetic_energy": 2.5302,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 13.0532,
+        "max_kinetic_energy": 35.609,
+        "std_kinetic_energy": 10.0141,
+        "collision_frequency": 227,
+        "avg_ejection_speed": 15.6979
     },
     "Eurojackpot 19. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot 19. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.7566,
-        "max_kinetic_energy": 11.5635,
-        "std_kinetic_energy": 2.9072,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 12.5918,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 9.9696,
+        "collision_frequency": 274,
+        "avg_ejection_speed": 12.2165
     },
     "Eurojackpot 26. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot 26. 8. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.9152,
-        "max_kinetic_energy": 14.0055,
-        "std_kinetic_energy": 3.2123,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 13.0433,
+        "max_kinetic_energy": 35.7771,
+        "std_kinetic_energy": 9.747,
+        "collision_frequency": 307,
+        "avg_ejection_speed": 15.1928
     },
     "Eurojackpot 3. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot 3. 10. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.4287,
-        "max_kinetic_energy": 11.4982,
-        "std_kinetic_energy": 2.5849,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 13.0976,
+        "max_kinetic_energy": 34.9285,
+        "std_kinetic_energy": 9.5241,
+        "collision_frequency": 342,
+        "avg_ejection_speed": 12.1511
     },
     "Eurojackpot 4. 7. 2025 - Allwyn \u010cesko (1080p, h264).mp4": {
         "filename": "Eurojackpot 4. 7. 2025 - Allwyn \u010cesko (1080p, h264).mp4",
-        "avg_kinetic_energy": 3.3628,
-        "max_kinetic_energy": 12.9373,
-        "std_kinetic_energy": 2.6831,
-        "estimated_mix_seconds": 36.4
+        "avg_kinetic_energy": 13.5928,
+        "max_kinetic_energy": 35.609,
+        "std_kinetic_energy": 9.9296,
+        "collision_frequency": 324,
+        "avg_ejection_speed": 14.0764
     }
 }
