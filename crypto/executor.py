@@ -111,11 +111,11 @@ def set_leverage(symbol, leverage=10):
     except Exception as e:
         print(f"Error setting leverage: {e}")
 
-def open_futures_position(symbol, side, size, sl_price=0.0, tp_price=0.0):
+def open_futures_position(symbol, side, size, leverage=10, sl_price=0.0, tp_price=0.0):
     """
     Opens a futures position with built-in Stop Loss and Take Profit.
     """
-    set_leverage(symbol, 10)
+    set_leverage(symbol, leverage)
     time.sleep(0.5)
     
     timestamp = str(int(time.time() * 1000))
@@ -280,12 +280,27 @@ def run_execution_loop():
                 
         # Case C: No position, and active signal triggers
         if pos_side is None and target_side is not None:
-            # Dynamic position sizing (Compounding):
-            # We want to allocate exactly 15% of total USDT balance as margin per coin.
-            # At 10x leverage, Position Value = 10 * (0.15 * usdt_total) = 1.5 * usdt_total.
-            # Position Qty = Position Value / Current Price.
-            target_margin = 0.15 * usdt_total
-            target_value = 10.0 * target_margin
+            # Automatic Risk Deleveraging (Compounding with Risk Reduction)
+            # As total account balance grows, we automatically reduce leverage and allocation to protect capital:
+            # - Under 1k: 15% margin per coin, 10x leverage (Total 45% margin, 4.5x leverage equivalent)
+            # - 1k to 5k: 10% margin per coin, 8x leverage  (Total 30% margin, 2.4x leverage equivalent)
+            # - 5k to 20k: 6% margin per coin, 5x leverage  (Total 18% margin, 0.9x leverage equivalent)
+            # - Over 20k:  3% margin per coin, 3x leverage  (Total 9% margin, 0.27x leverage equivalent)
+            if usdt_total < 1000.0:
+                alloc_pct = 0.15
+                leverage = 10
+            elif usdt_total < 5000.0:
+                alloc_pct = 0.10
+                leverage = 8
+            elif usdt_total < 20000.0:
+                alloc_pct = 0.06
+                leverage = 5
+            else:
+                alloc_pct = 0.03
+                leverage = 3
+                
+            target_margin = alloc_pct * usdt_total
+            target_value = float(leverage) * target_margin
             target_qty = target_value / current_price
             
             # Round according to symbol decimal precision
@@ -293,13 +308,13 @@ def run_execution_loop():
             size = max(min_qty[sym], round(target_qty, dec))
             
             # Required margin for this position (with 5% slippage buffer)
-            margin_required = (size * current_price / 10.0) * 1.05
+            margin_required = (size * current_price / float(leverage)) * 1.05
             
             if usdt_avail >= margin_required:
-                print(f"[{sym}] Opening 10x Futures position ({target_side}) for {size} (Margin req: {margin_required:.2f} USDT)...")
-                order_res = open_futures_position(sym, target_side, size, sl_price=sl, tp_price=tp)
+                print(f"[{sym}] Opening {leverage}x Futures position ({target_side}) for {size} (Margin req: {margin_required:.2f} USDT)...")
+                order_res = open_futures_position(sym, target_side, size, leverage=leverage, sl_price=sl, tp_price=tp)
                 if order_res and order_res.get("retCode") == 0:
-                    message = f"{sym} 10x Futures Position OPENED ({target_side} size={size}) at price {current_price:,.2f} USDT.\nStop Loss (SL): {sl:,.2f} USDT\nTake Profit (TP): {tp:,.2f} USDT"
+                    message = f"{sym} {leverage}x Futures Position OPENED ({target_side} size={size}) at price {current_price:,.2f} USDT.\nStop Loss (SL): {sl:,.2f} USDT\nTake Profit (TP): {tp:,.2f} USDT"
                     send_alert(f"[AI Bot] {sym} Futures Position Opened - {action}", message)
                 else:
                     print(f"[{sym}] Failed to open futures position.")
