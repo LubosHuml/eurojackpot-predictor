@@ -336,6 +336,21 @@ def generate_sportka_bets(main_probs, pred_sum, pred_counts, temperature=1.0, co
             
     return bets
 
+@app.route("/api/predictions/hybrid", methods=["GET"])
+def api_predictions_hybrid():
+    """Returns the ensemble Hybrid LSTM-Quantum predictions for Eurojackpot."""
+    try:
+        sys.path.append(os.path.join(os.path.dirname(__file__), "crypto"))
+        import quantum_lstm_hybrid
+        import importlib
+        importlib.reload(quantum_lstm_hybrid)
+        res = quantum_lstm_hybrid.run_hybrid_predictions(count=6)
+        if "error" in res:
+            return jsonify(res), 500
+        return jsonify(res)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/api/predictions", methods=["GET"])
 def api_predictions():
     game = request.args.get("game", "eurojackpot")

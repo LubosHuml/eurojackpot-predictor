@@ -1,6 +1,7 @@
 // Global state
 let currentProfile = 'conservative';
 let predictionsData = null;
+let hybridPredictionsData = null;
 let pollIntervalId = null;
 let activeTicketTab = 'standard';
 let currentGame = 'eurojackpot';
@@ -245,7 +246,16 @@ function renderBets() {
     const listContainer = document.getElementById("bets-list");
     if (!predictionsData) return;
     
-    const bets = activeTicketTab === 'system' ? predictionsData.system_bets : predictionsData.bets;
+    let bets = [];
+    if (activeTicketTab === 'system') {
+        bets = predictionsData.system_bets;
+    } else if (activeTicketTab === 'hybrid') {
+        if (!hybridPredictionsData) return;
+        bets = hybridPredictionsData.bets;
+    } else {
+        bets = predictionsData.bets;
+    }
+    
     listContainer.innerHTML = "";
     
     bets.forEach((bet) => {
@@ -267,13 +277,13 @@ function renderBets() {
         label.className = "bet-label";
         label.style.fontSize = "13px";
         label.style.fontWeight = "600";
-        label.textContent = `Row #${bet.id}`;
+        label.textContent = `Row #${bet.id || bet.row_id}`;
         
         const profileBadge = document.createElement("span");
         profileBadge.style.fontSize = "10px";
         profileBadge.style.color = "var(--text-secondary)";
         profileBadge.style.textTransform = "uppercase";
-        profileBadge.textContent = bet.profile;
+        profileBadge.textContent = bet.profile || `CONSENSUS (${bet.confidence}%)`;
         
         labelArea.appendChild(label);
         labelArea.appendChild(profileBadge);
@@ -582,37 +592,74 @@ async function registerTicket() {
     }
 }
 
-// Switches between Standard and System ticket tabs
+// Switches between Standard, System, and Hybrid ticket tabs
 function switchTicketTab(tabType) {
     activeTicketTab = tabType;
     
     const btnStandard = document.getElementById("tab-standard");
     const btnSystem = document.getElementById("tab-system");
+    const btnHybrid = document.getElementById("tab-hybrid");
     
-    if (tabType === 'system') {
-        btnSystem.classList.add("active");
-        btnSystem.style.color = "var(--accent-cyan)";
-        btnSystem.style.borderBottom = "2px solid var(--accent-cyan)";
-        btnSystem.style.fontWeight = "600";
-        
-        btnStandard.classList.remove("active");
-        btnStandard.style.color = "var(--text-secondary)";
-        btnStandard.style.borderBottom = "none";
-        btnStandard.style.fontWeight = "500";
-    } else {
-        btnStandard.classList.add("active");
-        btnStandard.style.color = "var(--accent-cyan)";
-        btnStandard.style.borderBottom = "2px solid var(--accent-cyan)";
-        btnStandard.style.fontWeight = "600";
-        
-        btnSystem.classList.remove("active");
-        btnSystem.style.color = "var(--text-secondary)";
-        btnSystem.style.borderBottom = "none";
-        btnSystem.style.fontWeight = "500";
+    [btnStandard, btnSystem, btnHybrid].forEach(btn => {
+        if (btn) {
+            btn.classList.remove("active");
+            btn.style.color = "var(--text-secondary)";
+            btn.style.borderBottom = "none";
+            btn.style.fontWeight = "500";
+        }
+    });
+    
+    let activeBtn = btnStandard;
+    if (tabType === 'system') activeBtn = btnSystem;
+    else if (tabType === 'hybrid') activeBtn = btnHybrid;
+    
+    if (activeBtn) {
+        activeBtn.classList.add("active");
+        activeBtn.style.color = "var(--accent-cyan)";
+        activeBtn.style.borderBottom = "2px solid var(--accent-cyan)";
+        activeBtn.style.fontWeight = "600";
     }
     
-    renderBets();
+    if (tabType === 'hybrid') {
+        fetchHybridPredictions();
+    } else {
+        renderBets();
+    }
     fetchStatus();
+}
+
+async function fetchHybridPredictions() {
+    const listContainer = document.getElementById("bets-list");
+    listContainer.innerHTML = `
+        <div class="loading-spinner-container">
+            <div class="spinner"></div>
+            <p>Collapsing Hybrid wave function...</p>
+        </div>
+    `;
+    
+    try {
+        const res = await fetch("/api/predictions/hybrid");
+        const data = await res.json();
+        
+        if (data.error) {
+            listContainer.innerHTML = `
+                <div class="loading-spinner-container">
+                    <p style="color: #ef4444; font-weight: 500;">Chyba: ${data.error}</p>
+                </div>
+            `;
+            return;
+        }
+        
+        hybridPredictionsData = data;
+        renderBets();
+    } catch (err) {
+        console.error("Error fetching hybrid predictions:", err);
+        listContainer.innerHTML = `
+            <div class="loading-spinner-container">
+                <p style="color: #ef4444; font-weight: 500;">Connection error to hybrid engine.</p>
+            </div>
+        `;
+    }
 }
 
 function switchGame(gameType) {
@@ -664,9 +711,30 @@ function switchGame(gameType) {
     
     setButtonActive(btnRentier, false);
     
+    const btnHybrid = document.getElementById("tab-hybrid");
+    
     if (gameType === 'sportka') {
         setButtonActive(btnSportka, true);
         setButtonActive(btnEuro, false);
+        
+        if (btnHybrid) btnHybrid.style.display = "none";
+        if (activeTicketTab === 'hybrid') {
+            activeTicketTab = 'standard';
+            const btnStandard = document.getElementById("tab-standard");
+            const btnSystem = document.getElementById("tab-system");
+            if (btnStandard) {
+                btnStandard.classList.add("active");
+                btnStandard.style.color = "var(--accent-cyan)";
+                btnStandard.style.borderBottom = "2px solid var(--accent-cyan)";
+                btnStandard.style.fontWeight = "600";
+            }
+            if (btnSystem) {
+                btnSystem.classList.remove("active");
+                btnSystem.style.color = "var(--text-secondary)";
+                btnSystem.style.borderBottom = "none";
+                btnSystem.style.fontWeight = "500";
+            }
+        }
         
         // Hide Euro metrics rows
         document.getElementById("row-metric-euro2").style.display = "none";
@@ -678,6 +746,8 @@ function switchGame(gameType) {
     } else {
         setButtonActive(btnEuro, true);
         setButtonActive(btnSportka, false);
+        
+        if (btnHybrid) btnHybrid.style.display = "inline-block";
         
         // Show Euro metrics rows
         document.getElementById("row-metric-euro2").style.display = "flex";
