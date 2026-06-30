@@ -16,6 +16,55 @@ import bybit_client
 import features
 import train
 
+def send_email_alert(new_action, price, confidence, sl, tp):
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    email_to = os.environ.get("EMAIL_TO", "lubos8huml@gmail.com")
+    smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    smtp_user = os.environ.get("SMTP_USER")
+    smtp_password = os.environ.get("SMTP_PASSWORD")
+
+    if not smtp_user or not smtp_password:
+        print("SMTP_USER or SMTP_PASSWORD not set. Skipping email alert.")
+        return False
+
+    subject = f"[AI Bot] BTC/USDT Trade Alert: {new_action}"
+    
+    body = f"""
+    <h3>BTC/USDT AI Prediction Alert</h3>
+    <p>The neural forecasting model has detected a change in trading action:</p>
+    <ul>
+        <li><b>New Action:</b> <span style="color: {'#06b6d4' if 'LONG' in new_action else '#ef4444' if 'SHORT' in new_action else '#6b7280'}; font-weight: bold;">{new_action}</span></li>
+        <li><b>Trigger Price:</b> {price:,.1f} USDT</li>
+        <li><b>Model Confidence:</b> {confidence:.1f}%</li>
+        <li><b>Stop Loss (SL):</b> {sl}</li>
+        <li><b>Take Profit (TP):</b> {tp}</li>
+    </ul>
+    <br>
+    <p><i>This is an automated message from your Eurojackpot & Crypto Predictor dashboard.</i></p>
+    """
+
+    msg = MIMEMultipart()
+    msg['From'] = smtp_user
+    msg['To'] = email_to
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'html'))
+
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+        server.sendmail(smtp_user, email_to, msg.as_string())
+        server.close()
+        print(f"Email alert successfully sent to {email_to}")
+        return True
+    except Exception as e:
+        print(f"Failed to send email alert: {e}")
+        return False
+
 def generate_live_prediction():
     crypto_dir = os.path.dirname(__file__)
     model_path = os.path.join(crypto_dir, train.MODEL_PATH)
@@ -108,11 +157,35 @@ def generate_live_prediction():
     }
     
     output_path = os.path.join(crypto_dir, "crypto_live_prediction.json")
+    
+    # Check if prediction changed
+    old_action = None
+    if os.path.exists(output_path):
+        try:
+            with open(output_path, "r") as f:
+                old_data = json.load(f)
+                old_action = old_data.get("action")
+        except Exception:
+            pass
+            
+    # Save first
     with open(output_path, "w") as f:
         json.dump(output, f)
         
     print(f"Generated live prediction saved to {output_path}")
     print(output)
+    
+    # Send email if action changed
+    if old_action is not None and old_action != action:
+        print(f"Action changed from {old_action} to {action}. Sending email...")
+        send_email_alert(
+            action,
+            output["price"],
+            output["probability"],
+            output["stop_loss"],
+            output["take_profit"]
+        )
+        
     return True
 
 if __name__ == "__main__":
