@@ -123,81 +123,141 @@ def fetch_lotto_data(game="eurojackpot"):
     cursor = conn.cursor()
     
     if game == "eurojackpot":
-        cursor.execute("SELECT num1, num2, num3, num4, num5, euro1, euro2 FROM draws ORDER BY date ASC")
+        cursor.execute("SELECT date, num1, num2, num3, num4, num5, euro1, euro2 FROM draws ORDER BY date ASC")
         rows = cursor.fetchall()
         conn.close()
         
-        main_nums = [list(r[0:5]) for r in rows]
-        euro_nums = [list(r[5:7]) for r in rows]
-        return main_nums, euro_nums
+        dates = [r[0] for r in rows]
+        main_nums = [list(r[1:6]) for r in rows]
+        euro_nums = [list(r[6:8]) for r in rows]
+        return dates, main_nums, euro_nums
     else:
         # Sportka
-        cursor.execute("SELECT num1, num2, num3, num4, num5, num6, supplementary FROM draws ORDER BY draw_date ASC, draw_num ASC")
+        cursor.execute("SELECT draw_date, num1, num2, num3, num4, num5, num6, supplementary FROM draws ORDER BY draw_date ASC, draw_num ASC")
         rows = cursor.fetchall()
         conn.close()
         
         rows = [r for r in rows if None not in r]
-        main_nums = [list(r[0:6]) for r in rows]
-        supp_nums = [[r[6]] for r in rows]
-        return main_nums, supp_nums
+        dates = [r[0] for r in rows]
+        main_nums = [list(r[1:7]) for r in rows]
+        supp_nums = [[r[7]] for r in rows]
+        return dates, main_nums, supp_nums
 
 def run_quantum_prediction(game="eurojackpot"):
     """
-    Runs 4-qubit Quantum Reservoir Computing and ShRIMP feature selector
-    to output collapsed quantum state draw numbers.
+    Runs 8-qubit (Eurojackpot) or 4-qubit (Sportka) Quantum Reservoir Computing
+    and ShRIMP feature selector to output collapsed quantum state draw numbers.
     """
     data = fetch_lotto_data(game)
     if not data:
         return {"error": "No database found. Run synchronization first."}
         
-    main_history, euro_history = data
+    dates, main_history, euro_history = data
     if len(main_history) < 20:
         return {"error": "Not enough draws in database."}
         
-    # Prepare input features: rolling sum, parity, high/low, and mean of past 5 draws
     inputs = []
     pool_max = 50 if game == "eurojackpot" else 49
     
-    for i in range(5, len(main_history)):
-        past_draws = main_history[i-5:i]
-        flat_past = np.array(past_draws).flatten()
+    if game == "eurojackpot":
+        # Load physical features
+        physical_map = {}
+        physical_path = os.path.join(project_path, "physical_features.json")
+        if os.path.exists(physical_path):
+            try:
+                with open(physical_path, "r", encoding="utf-8") as f:
+                    features_data = json.load(f)
+                    for fn, feat in features_data.items():
+                        name = fn.replace("Eurojackpot - ", "").replace("Eurojackpot ", "")
+                        parts = name.split(" - Allwyn")
+                        if len(parts) >= 2:
+                            date_str = parts[0].strip()
+                            try:
+                                day, month, year = [int(x) for x in date_str.split(".")]
+                                db_date = f"{year}-{month:02d}-{day:02d}"
+                                physical_map[db_date] = feat
+                            except Exception:
+                                pass
+            except Exception as e:
+                print(f"Error loading physical features: {e}")
+                
+        avg_kinetic_vals = [f["avg_kinetic_energy"] for f in physical_map.values()]
+        max_kinetic_vals = [f["max_kinetic_energy"] for f in physical_map.values()]
+        std_kinetic_vals = [f["std_kinetic_energy"] for f in physical_map.values()]
+        col_freq_vals = [f["collision_frequency"] for f in physical_map.values()]
+        eject_speed_vals = [f["avg_ejection_speed"] for f in physical_map.values()]
         
-        mean_val = np.mean(flat_past)
-        sum_val = np.sum(past_draws[-1])
-        even_count = sum(1 for x in past_draws[-1] if x % 2 == 0)
-        high_count = sum(1 for x in past_draws[-1] if x > (pool_max / 2))
+        global_avg_kinetic = np.mean(avg_kinetic_vals) if avg_kinetic_vals else 13.0
+        global_max_kinetic = np.mean(max_kinetic_vals) if max_kinetic_vals else 35.0
+        global_std_kinetic = np.mean(std_kinetic_vals) if std_kinetic_vals else 9.8
+        global_avg_col = np.mean(col_freq_vals) if col_freq_vals else 260.0
+        global_avg_eject = np.mean(eject_speed_vals) if eject_speed_vals else 14.5
         
-        # Scale to [-1, 1] range for QRC magnetic field modulation
-        f1 = (mean_val - (pool_max/2)) / (pool_max/2)
-        f2 = (sum_val - (pool_max*2.5)) / (pool_max*2.5)
-        f3 = (even_count - 2.5) / 2.5
-        f4 = (high_count - 2.5) / 2.5
+        for i in range(5, len(main_history)):
+            past_draws = main_history[i-5:i]
+            flat_past = np.array(past_draws).flatten()
+            mean_val = np.mean(flat_past)
+            sum_val = np.sum(past_draws[-1])
+            even_count = sum(1 for x in past_draws[-1] if x % 2 == 0)
+            high_count = sum(1 for x in past_draws[-1] if x > 25)
+            
+            d_date = dates[i-1]
+            p_avg = physical_map[d_date]["avg_kinetic_energy"] if d_date in physical_map else global_avg_kinetic
+            p_max = physical_map[d_date]["max_kinetic_energy"] if d_date in physical_map else global_max_kinetic
+            p_std = physical_map[d_date]["std_kinetic_energy"] if d_date in physical_map else global_std_kinetic
+            p_col = physical_map[d_date]["collision_frequency"] if d_date in physical_map else global_avg_col
+            p_eject = physical_map[d_date]["avg_ejection_speed"] if d_date in physical_map else global_avg_eject
+            
+            f1 = (mean_val - 25.0) / 25.0
+            f2 = (sum_val - 125.0) / 125.0
+            f3 = (even_count - 2.5) / 2.5
+            f4 = (high_count - 2.5) / 2.5
+            
+            # Normalize physical features to [-1, 1] range
+            f5 = (p_avg - 13.0) / 2.0
+            f6 = (p_max - 35.0) / 3.0
+            f7 = (p_col - 260.0) / 50.0
+            f8 = (p_eject - 14.5) / 3.0
+            inputs.append([f1, f2, f3, f4, f5, f6, f7, f8])
+            
+        inputs = np.array(inputs)
+        qrc = QuantumReservoir(n_qubits=8, J_coeff=0.5, h_field=1.0, epsilon=0.1)
+    else:
+        # Sportka
+        for i in range(5, len(main_history)):
+            past_draws = main_history[i-5:i]
+            flat_past = np.array(past_draws).flatten()
+            mean_val = np.mean(flat_past)
+            sum_val = np.sum(past_draws[-1])
+            even_count = sum(1 for x in past_draws[-1] if x % 2 == 0)
+            high_count = sum(1 for x in past_draws[-1] if x > 24)
+            
+            f1 = (mean_val - 24.5) / 24.5
+            f2 = (sum_val - 147.0) / 147.0
+            f3 = (even_count - 3.0) / 3.0
+            f4 = (high_count - 3.0) / 3.0
+            inputs.append([f1, f2, f3, f4])
+            
+        inputs = np.array(inputs)
+        qrc = QuantumReservoir(n_qubits=4, J_coeff=0.5, h_field=1.0, epsilon=0.1)
         
-        inputs.append([f1, f2, f3, f4])
-        
-    inputs = np.array(inputs)
-    
     # 1. Run Quantum Reservoir Computing
-    qrc = QuantumReservoir(n_qubits=4, J_coeff=0.5, h_field=1.0, epsilon=0.1)
     qrc_features = []
     for inp in inputs:
         states = qrc.step(inp)
         qrc_features.append(states)
-    qrc_features = np.array(qrc_features) # Shape: (N, 12)
+    qrc_features = np.array(qrc_features)
     
     # 2. Apply ShRIMP Sparser Feature mapping
     shrimp_feats, W_sparse = shrimp_random_features(qrc_features, num_features=50, sparsity=0.7)
     
-    # Readout Layer: Ridge Regression target to predict probability amplitudes of the number pool
-    # Target matrix: 1 if number was drawn in next draw, else 0
+    # Readout Layer
     targets_main = np.zeros((len(shrimp_feats), pool_max))
     for idx, next_draw in enumerate(main_history[5:]):
         for num in next_draw:
             if 1 <= num <= pool_max:
                 targets_main[idx, num - 1] = 1.0
                 
-    # Ridge Regression analytical solver (extremely fast, zero overhead!)
-    # W_readout = (Z^T Z + alpha*I)^-1 Z^T T
     Z = shrimp_feats
     Z_T_Z = Z.T @ Z
     alpha = 1.0
@@ -283,12 +343,22 @@ def run_quantum_prediction(game="eurojackpot"):
         num = np.random.choice(range(1, supp_max + 1), p=temp_probs_supp)
         selected_euro.append(int(num))
         
+    p_col = 0
+    p_eject = 0.0
+    if game == "eurojackpot" and len(dates) > 0:
+        last_date = dates[-1]
+        if last_date in physical_map:
+            p_col = physical_map[last_date]["collision_frequency"]
+            p_eject = physical_map[last_date]["avg_ejection_speed"]
+            
     return {
         "game": game,
         "quantum_main": selected_main,
         "quantum_euro": selected_euro,
         "superposition_state": [round(float(p) * 100, 2) for p in probabilities],
-        "qrc_energy": float(np.real(np.trace(qrc.rho @ qrc.rho))) # purity of state
+        "qrc_energy": float(np.real(np.trace(qrc.rho @ qrc.rho))), # purity of state
+        "collision_frequency": int(p_col),
+        "avg_ejection_speed": float(p_eject)
     }
 
 if __name__ == "__main__":

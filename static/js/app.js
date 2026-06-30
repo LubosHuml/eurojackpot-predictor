@@ -991,6 +991,25 @@ async function fetchQuantum() {
         
         document.getElementById("quantum-purity").textContent = data.qrc_energy.toFixed(4);
         
+        const badge = document.getElementById("quantum-badge");
+        const desc = document.getElementById("quantum-desc");
+        const physStats = document.getElementById("quantum-physical-stats");
+        
+        if (currentGame === "eurojackpot") {
+            if (badge) badge.textContent = "8-Qubit Simulator";
+            if (desc) desc.textContent = "8-qubit Quantum Reservoir Computing (QRC) & ShRIMP dequantized physical feature collapse";
+            if (physStats) physStats.style.display = "block";
+            
+            const colEl = document.getElementById("stat-quantum-collisions");
+            const velEl = document.getElementById("stat-quantum-velocity");
+            if (colEl) colEl.textContent = data.collision_frequency || 0;
+            if (velEl) velEl.textContent = (data.avg_ejection_speed ? data.avg_ejection_speed.toFixed(2) : "0.00") + " px/f";
+        } else {
+            if (badge) badge.textContent = "4-Qubit Simulator";
+            if (desc) desc.textContent = "4-qubit Quantum Reservoir Computing (QRC) & ShRIMP dequantized feature collapse";
+            if (physStats) physStats.style.display = "none";
+        }
+        
     } catch (err) {
         console.error("Error fetching quantum prediction:", err);
         container.innerHTML = `<span style="color: #ef4444; font-size: 12px;">Failed to collapse state.</span>`;
