@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import threading
 import numpy as np
@@ -41,9 +42,9 @@ def start_crypto_scheduler():
         while True:
             try:
                 print("[Scheduler] Running price fetch and predictions (output_bridge.py)...")
-                subprocess.run(["python", "crypto/output_bridge.py"])
+                subprocess.run([sys.executable, "crypto/output_bridge.py"])
                 print("[Scheduler] Checking and executing orders (executor.py)...")
-                subprocess.run(["python", "crypto/executor.py"])
+                subprocess.run([sys.executable, "crypto/executor.py"])
             except Exception as e:
                 print(f"[Scheduler] Loop execution error: {e}")
             # Run every 5 minutes (300 seconds)
@@ -701,7 +702,7 @@ def api_crypto_live():
     if not os.path.exists(prediction_path):
         import subprocess
         try:
-            subprocess.run(["python", "crypto/output_bridge.py"], check=True)
+            subprocess.run([sys.executable, "crypto/output_bridge.py"], check=True)
         except Exception as e:
             return jsonify({"error": f"Failed to generate prediction: {str(e)}"}), 500
             
@@ -718,8 +719,8 @@ def api_crypto_live():
                     def refresh_in_bg():
                         import subprocess
                         try:
-                            subprocess.run(["python", "crypto/output_bridge.py"])
-                            subprocess.run(["python", "crypto/executor.py"])
+                            subprocess.run([sys.executable, "crypto/output_bridge.py"])
+                            subprocess.run([sys.executable, "crypto/executor.py"])
                         except Exception:
                             pass
                     threading.Thread(target=refresh_in_bg).start()
@@ -730,7 +731,7 @@ def api_crypto_live():
         def run_executor_bg():
             import subprocess
             try:
-                subprocess.run(["python", "crypto/executor.py"])
+                subprocess.run([sys.executable, "crypto/executor.py"])
             except Exception:
                 pass
         threading.Thread(target=run_executor_bg).start()
