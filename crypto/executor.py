@@ -124,10 +124,14 @@ def open_futures_position(side, size=0.001, sl_price=0.0, tp_price=0.0):
     timestamp = str(int(time.time() * 1000))
     url = "https://api.bybit.com/v5/order/create"
     
+    # In Hedge Mode: positionIdx = 1 for Buy (Long), 2 for Sell (Short)
+    pos_idx = 1 if side == "Buy" else 2
+    
     payload = {
         "category": "linear",
         "symbol": "BTCUSDT",
         "side": side, # "Buy" for Long, "Sell" for Short
+        "positionIdx": pos_idx,
         "orderType": "Market",
         "qty": f"{size:.3f}",
         "timeInForce": "GTC",
@@ -159,10 +163,15 @@ def close_futures_position(side, size):
     timestamp = str(int(time.time() * 1000))
     url = "https://api.bybit.com/v5/order/create"
     
+    # In Hedge Mode, positionIdx remains the same as the position we are closing:
+    # 1 for Long (Buy), 2 for Short (Sell)
+    pos_idx = 1 if side == "Buy" else 2
+    
     payload = {
         "category": "linear",
         "symbol": "BTCUSDT",
         "side": close_side,
+        "positionIdx": pos_idx,
         "orderType": "Market",
         "qty": f"{size:.3f}",
         "reduceOnly": True
@@ -259,19 +268,31 @@ def run_execution_loop():
             
     # Case C: We have no position, and have an active target signal (Buy or Sell)
     if pos_side is None and target_side is not None:
-        # Check if we have enough margin
-        # At 10x leverage, minimum position of 0.001 BTC (~60 USD) requires ~6.0 USDT margin.
-        margin_required = 6.0
+        # Dynamic position sizing (Compounding):
+        # We want to use 50% of available USDT balance as margin.
+        # At 10x leverage, Position Value = 10 * (0.5 * usdt_bal) = 5.0 * usdt_bal.
+        # Position Qty in BTC = Position Value / Current Price.
+        target_margin = 0.5 * usdt_bal
+        target_value = 10.0 * target_margin
+        target_qty = target_value / current_price
+        
+        # Round to 3 decimal places (Bybit step size for BTCUSDT is 0.001)
+        size = max(0.001, round(target_qty, 3))
+        
+        # Margin required for this position: (size * current_price) / 10.0
+        # We add a 5% safety buffer for price movements during order placement
+        margin_required = (size * current_price / 10.0) * 1.05
+        
         if usdt_bal >= margin_required:
-            print(f"Opening leveraged 10x Futures position ({target_side}) for 0.001 BTC...")
-            order_res = open_futures_position(target_side, size=0.001, sl_price=sl, tp_price=tp)
+            print(f"Opening leveraged 10x Futures position ({target_side}) for {size:.3f} BTC (Margin req: {margin_required:.2f} USDT)...")
+            order_res = open_futures_position(target_side, size=size, sl_price=sl, tp_price=tp)
             if order_res and order_res.get("retCode") == 0:
-                message = f"BTC/USDT 10x Futures Position OPENED ({target_side} size=0.001 BTC) at price {current_price:,.1f} USDT.\nStop Loss (SL): {sl:,.1f} USDT\nTake Profit (TP): {tp:,.1f} USDT"
+                message = f"BTC/USDT 10x Futures Position OPENED ({target_side} size={size:.3f} BTC) at price {current_price:,.1f} USDT.\nStop Loss (SL): {sl:,.1f} USDT\nTake Profit (TP): {tp:,.1f} USDT"
                 send_alert(f"[AI Bot] BTC/USDT Futures Position Opened - {action}", message)
             else:
                 print("Failed to open futures position.")
         else:
-            print(f"Insufficient available margin ({usdt_bal:.2f} USDT). Required: {margin_required} USDT.")
+            print(f"Insufficient available margin ({usdt_bal:.2f} USDT). Required: {margin_required:.2f} USDT.")
 
 if __name__ == "__main__":
     run_execution_loop()
