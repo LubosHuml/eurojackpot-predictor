@@ -1,6 +1,7 @@
 import os
 import sys
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 import joblib
 import json
@@ -38,7 +39,7 @@ def generate_live_prediction():
         except Exception:
             pass
             
-    # Fetch 50 candles (plenty to compute sliding indicators of window size 20 + 30)
+    # Fetch 60 candles (plenty to compute sliding indicators of window size 20 + 30)
     print("Fetching live data from Bybit...")
     df = bybit_client.fetch_historical_klines(symbol="BTCUSDT", interval="60", limit=60)
     if df is None or len(df) < 40:
@@ -55,6 +56,16 @@ def generate_live_prediction():
     last_close = data_dict["closes"][-1]
     last_date = data_dict["datetimes"][-1]
     
+    # Calculate ATR (Average True Range) for Stop Loss and Take Profit
+    high = df["high"]
+    low = df["low"]
+    close_prev = df["close"].shift(1)
+    tr1 = high - low
+    tr2 = (high - close_prev).abs()
+    tr3 = (low - close_prev).abs()
+    tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+    atr = float(tr.rolling(14).mean().iloc[-1])
+    
     # Scale input
     samples, w, num_feats = X_last.shape
     X_last_flat = X_last.reshape(-1, num_feats)
@@ -66,14 +77,33 @@ def generate_live_prediction():
     
     prediction = "UP" if prob >= 0.50 else "DOWN"
     confidence = prob if prob >= 0.50 else (1.0 - prob)
+    confidence_pct = confidence * 100
     
+    # Determine actionable trading advice
+    # Confidence threshold of 54.5% to filter out noisy trades
+    if confidence_pct < 54.5:
+        action = "WAIT / NEUTRAL"
+        stop_loss = 0.0
+        take_profit = 0.0
+    else:
+        action = "BUY / LONG" if prediction == "UP" else "SELL / SHORT"
+        if prediction == "UP":
+            stop_loss = last_close - (1.5 * atr)
+            take_profit = last_close + (2.0 * atr)
+        else:
+            stop_loss = last_close + (1.5 * atr)
+            take_profit = last_close - (2.0 * atr)
+            
     output = {
         "datetime": str(last_date),
         "price": float(last_close),
         "prediction": prediction,
-        "probability": round(confidence * 100, 1),
+        "probability": round(confidence_pct, 1),
         "raw_prob": prob,
         "win_rate": round(win_rate, 1),
+        "action": action,
+        "stop_loss": round(stop_loss, 1) if stop_loss > 0 else "N/A",
+        "take_profit": round(take_profit, 1) if take_profit > 0 else "N/A",
         "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
     

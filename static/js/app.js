@@ -698,6 +698,21 @@ async function fetchCrypto() {
         document.getElementById("crypto-confidence").textContent = `${data.probability.toFixed(1)}%`;
         document.getElementById("crypto-winrate").textContent = `${data.win_rate.toFixed(1)}%`;
         
+        // Update Action with styling
+        const actionEl = document.getElementById("crypto-action");
+        actionEl.textContent = data.action;
+        if (data.action === "BUY / LONG") {
+            actionEl.style.color = "var(--accent-cyan)";
+        } else if (data.action === "SELL / SHORT") {
+            actionEl.style.color = "#ef4444";
+        } else {
+            actionEl.style.color = "var(--text-secondary)";
+        }
+        
+        // Update SL and TP
+        document.getElementById("crypto-sl").textContent = data.stop_loss === "N/A" ? "N/A" : `${data.stop_loss.toLocaleString()} USDT`;
+        document.getElementById("crypto-tp").textContent = data.take_profit === "N/A" ? "N/A" : `${data.take_profit.toLocaleString()} USDT`;
+        
         // Format last updated datetime
         const dateParts = data.updated_at.split(" ");
         document.getElementById("crypto-updated").textContent = dateParts.length === 2 ? `${dateParts[0]} ${dateParts[1]}` : data.updated_at;

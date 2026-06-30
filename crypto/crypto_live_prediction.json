@@ -1,1 +1,1 @@
-{"datetime": "2026-06-30 05:00:00", "price": 59410.1, "prediction": "UP", "probability": 60.3, "raw_prob": 0.6033656597137451, "win_rate": 55.3, "updated_at": "2026-06-30 07:24:05"}
+{"datetime": "2026-06-30 05:00:00", "price": 59347.5, "prediction": "UP", "probability": 60.3, "raw_prob": 0.6033656597137451, "win_rate": 55.3, "action": "BUY / LONG", "stop_loss": 58810.1, "take_profit": 60064.0, "updated_at": "2026-06-30 07:36:33"}
