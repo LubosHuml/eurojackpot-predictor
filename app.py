@@ -626,6 +626,23 @@ def api_update():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api/lotto/quantum", methods=["GET"])
+def api_lotto_quantum():
+    game = request.args.get("game", "eurojackpot")
+    if game not in ["eurojackpot", "sportka"]:
+        return jsonify({"error": "Invalid game type."}), 400
+        
+    try:
+        sys.path.append(os.path.join(os.path.dirname(__file__), "crypto"))
+        import quantum_lotto
+        # Reload to prevent stale cache if database updates
+        import importlib
+        importlib.reload(quantum_lotto)
+        res = quantum_lotto.run_quantum_prediction(game)
+        return jsonify(res)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/api/crypto/live", methods=["GET"])
 def api_crypto_live():
     prediction_path = os.path.join("crypto", "crypto_live_prediction.json")

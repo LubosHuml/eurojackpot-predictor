@@ -702,6 +702,7 @@ function switchGame(gameType) {
     fetchMetrics();
     fetchPredictions();
     fetchTickets();
+    fetchQuantum();
 }
 
 async function fetchPlan() {
@@ -850,5 +851,78 @@ async function fetchCrypto() {
         
     } catch (err) {
         console.error("Error fetching crypto metrics:", err);
+    }
+}
+
+async function fetchQuantum() {
+    const container = document.getElementById("quantum-numbers-display");
+    if (!container) return;
+    container.innerHTML = `<span style="color: var(--text-secondary); font-size: 13px;">Performing quantum measurement...</span>`;
+    
+    try {
+        const res = await fetch(`/api/lotto/quantum?game=${currentGame}`);
+        const data = await res.json();
+        
+        if (data.error) {
+            container.innerHTML = `<span style="color: #ef4444; font-size: 12px;">Error: ${data.error}</span>`;
+            return;
+        }
+        
+        container.innerHTML = "";
+        // Render main numbers
+        data.quantum_main.forEach(num => {
+            const ball = document.createElement("span");
+            ball.className = "ball";
+            ball.textContent = num;
+            ball.style.width = "30px";
+            ball.style.height = "30px";
+            ball.style.lineHeight = "30px";
+            ball.style.fontSize = "12px";
+            ball.style.fontWeight = "600";
+            ball.style.display = "inline-block";
+            ball.style.textAlign = "center";
+            ball.style.borderRadius = "50%";
+            ball.style.background = "linear-gradient(135deg, var(--accent-cyan), #0072ff)";
+            ball.style.color = "#000";
+            ball.style.boxShadow = "0 0 10px rgba(0, 242, 254, 0.4)";
+            ball.style.margin = "0 2px";
+            container.appendChild(ball);
+        });
+        
+        // Add a divider
+        if (data.quantum_euro.length > 0) {
+            const divider = document.createElement("span");
+            divider.textContent = "|";
+            divider.style.color = "var(--border-color)";
+            divider.style.margin = "0 6px";
+            divider.style.fontWeight = "bold";
+            container.appendChild(divider);
+        }
+        
+        // Render euro/supplementary numbers
+        data.quantum_euro.forEach(num => {
+            const ball = document.createElement("span");
+            ball.className = "ball euro";
+            ball.textContent = num;
+            ball.style.width = "30px";
+            ball.style.height = "30px";
+            ball.style.lineHeight = "30px";
+            ball.style.fontSize = "12px";
+            ball.style.fontWeight = "600";
+            ball.style.display = "inline-block";
+            ball.style.textAlign = "center";
+            ball.style.borderRadius = "50%";
+            ball.style.background = "linear-gradient(135deg, #ffe259, #ffa751)";
+            ball.style.color = "#000";
+            ball.style.boxShadow = "0 0 10px rgba(255, 226, 89, 0.4)";
+            ball.style.margin = "0 2px";
+            container.appendChild(ball);
+        });
+        
+        document.getElementById("quantum-purity").textContent = data.qrc_energy.toFixed(4);
+        
+    } catch (err) {
+        console.error("Error fetching quantum prediction:", err);
+        container.innerHTML = `<span style="color: #ef4444; font-size: 12px;">Failed to collapse state.</span>`;
     }
 }
