@@ -626,6 +626,40 @@ def api_update():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api/crypto/live", methods=["GET"])
+def api_crypto_live():
+    prediction_path = os.path.join("crypto", "crypto_live_prediction.json")
+    if not os.path.exists(prediction_path):
+        import subprocess
+        try:
+            subprocess.run(["python", "crypto/output_bridge.py"], check=True)
+        except Exception as e:
+            return jsonify({"error": f"Failed to generate prediction: {str(e)}"}), 500
+            
+    try:
+        with open(prediction_path, "r") as f:
+            data = json.load(f)
+            
+        updated_at_str = data.get("updated_at")
+        if updated_at_str:
+            try:
+                updated_at = datetime.strptime(updated_at_str, "%Y-%m-%d %H:%M:%S")
+                # Refresh if older than 10 minutes (600 seconds)
+                if (datetime.now() - updated_at).total_seconds() > 600:
+                    def refresh_in_bg():
+                        import subprocess
+                        try:
+                            subprocess.run(["python", "crypto/output_bridge.py"])
+                        except Exception:
+                            pass
+                    threading.Thread(target=refresh_in_bg).start()
+            except Exception:
+                pass
+                
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 def background_training_thread():
     """Background training worker to avoid blocking Flask web process."""
     global training_status

@@ -11,6 +11,9 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchMetrics();
     fetchPredictions();
     fetchTickets();
+    fetchCrypto();
+    // Poll crypto prediction every 60 seconds
+    setInterval(fetchCrypto, 60000);
 });
 
 // Fetch system status
@@ -666,4 +669,40 @@ function switchGame(gameType) {
     fetchMetrics();
     fetchPredictions();
     fetchTickets();
+}
+
+async function fetchCrypto() {
+    try {
+        const res = await fetch("/api/crypto/live");
+        const data = await res.json();
+        
+        if (data.error) {
+            document.getElementById("crypto-price").textContent = "N/A";
+            document.getElementById("crypto-prediction").textContent = "N/A";
+            return;
+        }
+        
+        // Update price
+        document.getElementById("crypto-price").textContent = `${data.price.toLocaleString()} USDT`;
+        
+        // Update prediction with styling
+        const predEl = document.getElementById("crypto-prediction");
+        predEl.textContent = data.prediction;
+        if (data.prediction === "UP") {
+            predEl.style.color = "var(--accent-cyan)";
+        } else {
+            predEl.style.color = "#ef4444";
+        }
+        
+        // Update indicators
+        document.getElementById("crypto-confidence").textContent = `${data.probability.toFixed(1)}%`;
+        document.getElementById("crypto-winrate").textContent = `${data.win_rate.toFixed(1)}%`;
+        
+        // Format last updated datetime
+        const dateParts = data.updated_at.split(" ");
+        document.getElementById("crypto-updated").textContent = dateParts.length === 2 ? `${dateParts[0]} ${dateParts[1]}` : data.updated_at;
+        
+    } catch (err) {
+        console.error("Error fetching crypto metrics:", err);
+    }
 }

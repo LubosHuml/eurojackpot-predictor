@@ -232,6 +232,37 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="glass-card crypto-card" style="margin-top: 24px;">
+                    <h2>BTC/USDT AI Forecast</h2>
+                    <p class="section-desc">Live hourly direction indicator based on Bybit data</p>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding: 12px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid var(--border-color);">
+                        <div>
+                            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 500;">Current Price</div>
+                            <div id="crypto-price" style="font-family: var(--font-outfit); font-size: 18px; font-weight: 700; color: var(--text-primary);">Loading...</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 500;">Next hour forecast</div>
+                            <div id="crypto-prediction" style="font-family: var(--font-outfit); font-size: 18px; font-weight: 800; text-shadow: 0 0 10px currentColor;">Loading...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="metrics-grid" style="margin-top: 12px; font-size: 12px;">
+                        <div class="metric-row">
+                            <span class="metric-name">AI Direction Confidence</span>
+                            <span class="metric-val" id="crypto-confidence">Loading...</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-name">Backtest Win Rate (1h)</span>
+                            <span class="metric-val" id="crypto-winrate">Loading...</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-name">Last Updated</span>
+                            <span class="metric-val" id="crypto-updated" style="font-size: 10px; color: var(--text-secondary);">Loading...</span>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="glass-card chart-card" style="margin-top: 24px;">
                     <h2>Historical Accuracy</h2>
