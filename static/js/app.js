@@ -620,15 +620,53 @@ function switchGame(gameType) {
     
     const btnEuro = document.getElementById("game-eurojackpot");
     const btnSportka = document.getElementById("game-sportka");
+    const btnRentier = document.getElementById("game-rentier");
+    
+    const lotteryLayout = document.getElementById("lottery-layout");
+    const rentierLayout = document.getElementById("rentier-layout");
+    
+    // Style reset helper
+    function setButtonActive(btn, active) {
+        if (active) {
+            btn.style.background = "rgba(0, 242, 254, 0.1)";
+            btn.style.borderColor = "var(--accent-cyan)";
+            btn.style.color = "var(--accent-cyan)";
+        } else {
+            btn.style.background = "rgba(255, 255, 255, 0.03)";
+            btn.style.borderColor = "var(--border-color)";
+            btn.style.color = "var(--text-secondary)";
+        }
+    }
+    
+    if (gameType === 'rentier') {
+        setButtonActive(btnRentier, true);
+        setButtonActive(btnEuro, false);
+        setButtonActive(btnSportka, false);
+        
+        lotteryLayout.classList.add("hidden");
+        lotteryLayout.style.display = "none";
+        rentierLayout.classList.remove("hidden");
+        rentierLayout.style.display = "flex";
+        
+        // Update header & subtitle
+        document.querySelector(".title-meta h1").innerHTML = 'Rentierský Plán <span class="accent-text">(10 let)</span>';
+        document.querySelector(".title-meta p").textContent = 'AI Trading Portfolio Savings & Dynamic Deleveraging Tracker';
+        
+        fetchPlan();
+        return;
+    }
+    
+    // For standard games, ensure lottery layout is visible
+    lotteryLayout.classList.remove("hidden");
+    lotteryLayout.style.display = "flex";
+    rentierLayout.classList.add("hidden");
+    rentierLayout.style.display = "none";
+    
+    setButtonActive(btnRentier, false);
     
     if (gameType === 'sportka') {
-        btnSportka.style.background = "rgba(0, 242, 254, 0.1)";
-        btnSportka.style.borderColor = "var(--accent-cyan)";
-        btnSportka.style.color = "var(--accent-cyan)";
-        
-        btnEuro.style.background = "rgba(255, 255, 255, 0.03)";
-        btnEuro.style.borderColor = "var(--border-color)";
-        btnEuro.style.color = "var(--text-secondary)";
+        setButtonActive(btnSportka, true);
+        setButtonActive(btnEuro, false);
         
         // Hide Euro metrics rows
         document.getElementById("row-metric-euro2").style.display = "none";
@@ -638,13 +676,8 @@ function switchGame(gameType) {
         document.querySelector(".title-meta h1").innerHTML = 'Sportka <span class="accent-text">AI Forecast</span>';
         document.querySelector(".title-meta p").textContent = 'Self-tuning LSTM neural network & magnitude pruning (6 main + supplementary)';
     } else {
-        btnEuro.style.background = "rgba(0, 242, 254, 0.1)";
-        btnEuro.style.borderColor = "var(--accent-cyan)";
-        btnEuro.style.color = "var(--accent-cyan)";
-        
-        btnSportka.style.background = "rgba(255, 255, 255, 0.03)";
-        btnSportka.style.borderColor = "var(--border-color)";
-        btnSportka.style.color = "var(--text-secondary)";
+        setButtonActive(btnEuro, true);
+        setButtonActive(btnSportka, false);
         
         // Show Euro metrics rows
         document.getElementById("row-metric-euro2").style.display = "flex";
@@ -669,6 +702,94 @@ function switchGame(gameType) {
     fetchMetrics();
     fetchPredictions();
     fetchTickets();
+}
+
+async function fetchPlan() {
+    const tableBody = document.getElementById("plan-table-body");
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="7" style="text-align: center; padding: 30px;">
+                <div class="spinner" style="margin: 0 auto;"></div>
+                <p style="margin-top: 10px; color: var(--text-secondary);">Načítám 10letý finanční plán...</p>
+            </td>
+        </tr>
+    `;
+    
+    try {
+        const res = await fetch("/api/crypto/plan");
+        const data = await res.json();
+        
+        if (data.error) {
+            tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 20px;">Error: ${data.error}</td></tr>`;
+            return;
+        }
+        
+        tableBody.innerHTML = "";
+        data.forEach(item => {
+            const tr = document.createElement("tr");
+            tr.style.borderBottom = "1px solid var(--border-color)";
+            
+            // Deviation math
+            let devHtml = `<span style="color: var(--text-secondary);">—</span>`;
+            if (item.actual_balance !== null) {
+                const dev = item.actual_balance - item.expected_balance;
+                const devFormatted = dev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                if (dev >= 0) {
+                    devHtml = `<span style="color: var(--accent-cyan); font-weight: 600;">+${devFormatted} USDT</span>`;
+                } else {
+                    devHtml = `<span style="color: #ef4444; font-weight: 600;">${devFormatted} USDT</span>`;
+                }
+            }
+            
+            tr.innerHTML = `
+                <td style="padding: 12px; font-weight: 500;">${item.month}</td>
+                <td style="padding: 12px; color: var(--text-secondary);">${item.deposit.toFixed(1)} USDT</td>
+                <td style="padding: 12px; color: var(--text-secondary);">${item.leverage}x / ${item.alloc_pct}%</td>
+                <td style="padding: 12px; color: var(--accent-cyan); font-weight: 500;">+${item.rate_pct}%</td>
+                <td style="padding: 12px; font-family: monospace; font-weight: 600;">${item.expected_balance.toLocaleString()} USDT</td>
+                <td style="padding: 12px;">
+                    <input type="number" step="0.01" value="${item.actual_balance !== null ? item.actual_balance : ''}" 
+                           placeholder="—" 
+                           onchange="updateActualBalance(${item.index}, this.value)" 
+                           style="width: 110px; background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 4px 8px; text-align: right; font-family: monospace; outline: none; transition: border-color 0.2s;">
+                </td>
+                <td style="padding: 12px; font-family: monospace;">${devHtml}</td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error("Error fetching plan:", err);
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 20px;">Nepodařilo se připojit k serveru.</td></tr>`;
+    }
+}
+
+async function updateActualBalance(index, value) {
+    const valFloat = value.trim() === "" ? null : parseFloat(value);
+    
+    try {
+        const res = await fetch("/api/crypto/plan/update", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                index: index,
+                actual_balance: valFloat
+            })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            showToast("Zůstatek úspěšně uložen!");
+            // Re-fetch plan to update the deviation column immediately
+            fetchPlan();
+        } else {
+            showToast("Chyba při ukládání: " + data.error);
+        }
+    } catch (err) {
+        console.error("Error saving actual balance:", err);
+        showToast("Nepodařilo se uložit zůstatek.");
+    }
 }
 
 async function fetchCrypto() {

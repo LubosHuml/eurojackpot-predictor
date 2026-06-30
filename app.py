@@ -670,6 +670,51 @@ def api_crypto_live():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api/crypto/plan", methods=["GET"])
+def api_crypto_plan():
+    plan_path = "crypto_10y_plan.json"
+    if not os.path.exists(plan_path):
+        return jsonify({"error": "Plan file not found."}), 404
+    try:
+        with open(plan_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/crypto/plan/update", methods=["POST"])
+def api_crypto_plan_update():
+    plan_path = "crypto_10y_plan.json"
+    if not os.path.exists(plan_path):
+        return jsonify({"error": "Plan file not found."}), 404
+    try:
+        req_data = request.get_json() or {}
+        index = req_data.get("index")
+        actual_val = req_data.get("actual_balance")
+        
+        if index is None:
+            return jsonify({"error": "Missing index parameter."}), 400
+            
+        with open(plan_path, "r", encoding="utf-8") as f:
+            plan = json.load(f)
+            
+        updated = False
+        for item in plan:
+            if item.get("index") == int(index):
+                item["actual_balance"] = float(actual_val) if actual_val is not None else None
+                updated = True
+                break
+                
+        if not updated:
+            return jsonify({"error": f"Item with index {index} not found."}), 404
+            
+        with open(plan_path, "w", encoding="utf-8") as f:
+            json.dump(plan, f, indent=4, ensure_ascii=False)
+            
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 def background_training_thread():
     """Background training worker to avoid blocking Flask web process."""
     global training_status

@@ -45,6 +45,7 @@
         <div class="game-selector-container" style="display: flex; justify-content: center; gap: 12px; margin-bottom: 20px;">
             <button class="game-btn active" id="game-eurojackpot" onclick="switchGame('eurojackpot')" style="background: rgba(0, 242, 254, 0.1); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-family: var(--font-outfit); font-size: 14px; font-weight: 600; cursor: pointer; padding: 8px 24px; border-radius: 8px; transition: all 0.2s;">Eurojackpot</button>
             <button class="game-btn" id="game-sportka" onclick="switchGame('sportka')" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); color: var(--text-secondary); font-family: var(--font-outfit); font-size: 14px; font-weight: 600; cursor: pointer; padding: 8px 24px; border-radius: 8px; transition: all 0.2s;">Sportka</button>
+            <button class="game-btn" id="game-rentier" onclick="switchGame('rentier')" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); color: var(--text-secondary); font-family: var(--font-outfit); font-size: 14px; font-weight: 600; cursor: pointer; padding: 8px 24px; border-radius: 8px; transition: all 0.2s;">Rentierský Plán (10 let)</button>
         </div>
 
         <!-- DASHBOARD OVERVIEW -->
@@ -73,7 +74,7 @@
         </section>
 
         <!-- MAIN LAYOUT -->
-        <main class="main-layout">
+        <main class="main-layout" id="lottery-layout">
             
             <!-- LEFT COLUMN: COMBINATIONS -->
             <div class="content-column left-col">
@@ -368,6 +369,60 @@
                 </div>
             </div>
 
+        </main>
+
+        <!-- RENTIER PLAN LAYOUT -->
+        <main id="rentier-layout" class="hidden" style="margin-top: 10px; display: flex; flex-direction: column; gap: 24px;">
+            <div class="glass-card" style="padding: 24px;">
+                <h2 style="font-size: 22px; margin-bottom: 8px;">Rentierský Plán (10 let) - Cíl: 2 000 - 3 000 USD / měsíčně</h2>
+                <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.6; margin-bottom: 16px;">
+                    Tento plán kombinuje pravidelné měsíční vklady <strong>100 USDT</strong> s naším pokročilým <strong>AI trading portfolio modelem (BTC, ETH, SOL)</strong> a automatickým řízením rizik (Automatic Risk Deleveraging). S rostoucím zůstatkem se automaticky snižuje páka a alokace, aby byla chráněna vaše hotovost.
+                </p>
+                <div class="deleveraging-rules-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 14px;">
+                    <div style="padding: 12px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid var(--border-color);">
+                        <div style="font-weight: 700; color: var(--accent-cyan);">Zůstatek &lt; 1 000 USD</div>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Páka: 10x \| Alokace: 15% / mince<br>Cílový vývoj: +16.5% / měsíc</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid var(--border-color);">
+                        <div style="font-weight: 700; color: var(--accent-cyan);">1 000 - 5 000 USD</div>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Páka: 8x \| Alokace: 10% / mince<br>Cílový vývoj: +10.5% / měsíc</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid var(--border-color);">
+                        <div style="font-weight: 700; color: var(--accent-cyan);">5 000 - 20 000 USD</div>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Páka: 5x \| Alokace: 6% / mince<br>Cílový vývoj: +5.5% / měsíc</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid var(--border-color);">
+                        <div style="font-weight: 700; color: var(--accent-cyan);">&gt; 20 000 USD</div>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Páka: 3x \| Alokace: 3% / mince<br>Cílový vývoj: +2.5% / měsíc</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-card" style="padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h2 style="font-size: 18px;">Měsíční plánovač a zápisník skutečných výsledků</h2>
+                    <span style="font-size: 11px; color: var(--text-secondary);">Kliknutím na políčko zapište reálný konečný stav účtu na konci měsíce</span>
+                </div>
+                
+                <div style="overflow-x: auto; max-height: 500px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                        <thead>
+                            <tr style="background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid var(--border-color);">
+                                <th style="padding: 12px; font-weight: 600;">Měsíc</th>
+                                <th style="padding: 12px; font-weight: 600;">Vklad</th>
+                                <th style="padding: 12px; font-weight: 600;">Páka / Alokace</th>
+                                <th style="padding: 12px; font-weight: 600;">Očekávané zhodnocení</th>
+                                <th style="padding: 12px; font-weight: 600;">Očekávaný zůstatek</th>
+                                <th style="padding: 12px; font-weight: 600;">Skutečný zůstatek</th>
+                                <th style="padding: 12px; font-weight: 600;">Odchylka</th>
+                            </tr>
+                        </thead>
+                        <tbody id="plan-table-body">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </main>
 
         <footer class="app-footer">
