@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 import joblib
 import sqlite3
+import json
 
 # Resolve project path dynamically
 project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -67,8 +68,37 @@ def run_hybrid_predictions(count=6):
     lstm_main_probs = pred_main_probs[0]
     lstm_euro_probs = pred_euro_probs[0]
     
-    # 3. Quantum Reservoir Computing pipeline
-    # Construct 8 QRC features for 8-qubit simulation
+    # Load physical míchání features from draw videos
+    phys_path = os.path.join(project_path, "physical_features.json")
+    physical_map = {}
+    if os.path.exists(phys_path):
+        try:
+            with open(phys_path, "r") as f:
+                phys_data = json.load(f)
+            for fn, feat in phys_data.items():
+                name = fn.replace("Eurojackpot - ", "").replace("Eurojackpot ", "")
+                parts = name.split(" - Allwyn")
+                if len(parts) >= 2:
+                    date_str = parts[0].strip()
+                    try:
+                        day, month, year = [int(x) for x in date_str.split(".")]
+                        db_date = f"{year}-{month:02d}-{day:02d}"
+                        physical_map[db_date] = feat
+                    except Exception:
+                        pass
+        except Exception as e:
+            print(f"Error loading physical features: {e}")
+            
+    # Compute baseline defaults for draws without video records
+    avg_kinetic_vals = [f["avg_kinetic_energy"] for f in physical_map.values()]
+    max_kinetic_vals = [f["max_kinetic_energy"] for f in physical_map.values()]
+    std_kinetic_vals = [f["std_kinetic_energy"] for f in physical_map.values()]
+    
+    global_avg_kinetic = np.mean(avg_kinetic_vals) if avg_kinetic_vals else 3.55
+    global_max_kinetic = np.mean(max_kinetic_vals) if max_kinetic_vals else 11.50
+    global_std_kinetic = np.mean(std_kinetic_vals) if std_kinetic_vals else 2.75
+
+    # Construct 8 QRC features combining statistical distributions and machine physics
     inputs = []
     for i in range(5, len(draws)):
         past_draws = [d['main_nums'] for d in draws[i-5:i]]
@@ -82,14 +112,30 @@ def run_hybrid_predictions(count=6):
         low_count = sum(1 for x in past_draws[-1] if x <= 25)
         odd_count = sum(1 for x in past_draws[-1] if x % 2 != 0)
         
+        # Get physical features for the last draw (i-1) if available
+        last_draw_date = draws[i-1]['date']
+        if last_draw_date in physical_map:
+            p_avg = physical_map[last_draw_date]["avg_kinetic_energy"]
+            p_max = physical_map[last_draw_date]["max_kinetic_energy"]
+            p_std = physical_map[last_draw_date]["std_kinetic_energy"]
+        else:
+            p_avg = global_avg_kinetic
+            p_max = global_max_kinetic
+            p_std = global_std_kinetic
+            
         f1 = (mean_val - 25.0) / 25.0
         f2 = (sum_val - 125.0) / 125.0
         f3 = (even_count - 2.5) / 2.5
         f4 = (high_count - 2.5) / 2.5
-        f5 = (std_val - 14.4) / 14.4
-        f6 = (median_val - 25.0) / 25.0
-        f7 = (low_count - 2.5) / 2.5
-        f8 = (odd_count - 2.5) / 2.5
+        
+        # Normalize physical features to [-1, 1] range
+        f5 = (p_avg - 3.5) / 0.5
+        f6 = (p_max - 11.5) / 1.5
+        f7 = (p_std - 2.75) / 0.5
+        
+        # Standard deviation of number configurations as f8
+        f8 = (std_val - 14.4) / 14.4
+        
         inputs.append([f1, f2, f3, f4, f5, f6, f7, f8])
     inputs = np.array(inputs)
     
