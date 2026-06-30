@@ -677,41 +677,51 @@ async function fetchCrypto() {
         const data = await res.json();
         
         if (data.error) {
-            document.getElementById("crypto-price").textContent = "N/A";
-            document.getElementById("crypto-prediction").textContent = "N/A";
+            ["btc", "eth", "sol"].forEach(coin => {
+                document.getElementById(`${coin}-price`).textContent = "N/A";
+                document.getElementById(`${coin}-prediction`).textContent = "N/A";
+            });
             return;
         }
         
-        // Update price
-        document.getElementById("crypto-price").textContent = `${data.price.toLocaleString()} USDT`;
-        
-        // Update prediction with styling
-        const predEl = document.getElementById("crypto-prediction");
-        predEl.textContent = data.prediction;
-        if (data.prediction === "UP") {
-            predEl.style.color = "var(--accent-cyan)";
-        } else {
-            predEl.style.color = "#ef4444";
-        }
-        
-        // Update indicators
-        document.getElementById("crypto-confidence").textContent = `${data.probability.toFixed(1)}%`;
-        document.getElementById("crypto-winrate").textContent = `${data.win_rate.toFixed(1)}%`;
-        
-        // Update Action with styling
-        const actionEl = document.getElementById("crypto-action");
-        actionEl.textContent = data.action;
-        if (data.action === "BUY / LONG") {
-            actionEl.style.color = "var(--accent-cyan)";
-        } else if (data.action === "SELL / SHORT") {
-            actionEl.style.color = "#ef4444";
-        } else {
-            actionEl.style.color = "var(--text-secondary)";
-        }
-        
-        // Update SL and TP
-        document.getElementById("crypto-sl").textContent = data.stop_loss === "N/A" ? "N/A" : `${data.stop_loss.toLocaleString()} USDT`;
-        document.getElementById("crypto-tp").textContent = data.take_profit === "N/A" ? "N/A" : `${data.take_profit.toLocaleString()} USDT`;
+        const coins = ["btcusdt", "ethusdt", "solusdt"];
+        coins.forEach(coinKey => {
+            const coinData = data[coinKey];
+            if (!coinData) return;
+            
+            const coinPrefix = coinKey.replace("usdt", "");
+            
+            // Update price
+            document.getElementById(`${coinPrefix}-price`).textContent = `${coinData.price.toLocaleString()} USDT`;
+            
+            // Update prediction with styling
+            const predEl = document.getElementById(`${coinPrefix}-prediction`);
+            predEl.textContent = coinData.prediction;
+            if (coinData.prediction === "UP") {
+                predEl.style.color = "var(--accent-cyan)";
+            } else {
+                predEl.style.color = "#ef4444";
+            }
+            
+            // Update indicators
+            document.getElementById(`${coinPrefix}-confidence`).textContent = `${coinData.probability.toFixed(1)}%`;
+            document.getElementById(`${coinPrefix}-winrate`).textContent = `${coinData.win_rate.toFixed(1)}%`;
+            
+            // Update Action with styling
+            const actionEl = document.getElementById(`${coinPrefix}-action`);
+            actionEl.textContent = coinData.action;
+            if (coinData.action === "BUY / LONG") {
+                actionEl.style.color = "var(--accent-cyan)";
+            } else if (coinData.action === "SELL / SHORT") {
+                actionEl.style.color = "#ef4444";
+            } else {
+                actionEl.style.color = "var(--text-secondary)";
+            }
+            
+            // Update SL and TP
+            document.getElementById(`${coinPrefix}-sl`).textContent = coinData.stop_loss === "N/A" ? "N/A" : `${coinData.stop_loss.toLocaleString()} USDT`;
+            document.getElementById(`${coinPrefix}-tp`).textContent = coinData.take_profit === "N/A" ? "N/A" : `${coinData.take_profit.toLocaleString()} USDT`;
+        });
         
         // Format last updated datetime
         const dateParts = data.updated_at.split(" ");

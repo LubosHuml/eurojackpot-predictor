@@ -14,66 +14,18 @@ sys.path.append(os.path.join(project_path, "crypto"))
 
 import bybit_client
 import features
-import train
 
-def send_email_alert(new_action, price, confidence, sl, tp):
-    import smtplib
-    from email.mime.text import MIMEText
-    from email.mime.multipart import MIMEMultipart
-
-    email_to = os.environ.get("EMAIL_TO", "lubos8huml@gmail.com")
-    smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
-    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-    smtp_user = os.environ.get("SMTP_USER")
-    smtp_password = os.environ.get("SMTP_PASSWORD")
-
-    if not smtp_user or not smtp_password:
-        print("SMTP_USER or SMTP_PASSWORD not set. Skipping email alert.")
-        return False
-
-    subject = f"[AI Bot] BTC/USDT Trade Alert: {new_action}"
-    
-    body = f"""
-    <h3>BTC/USDT AI Prediction Alert</h3>
-    <p>The neural forecasting model has detected a change in trading action:</p>
-    <ul>
-        <li><b>New Action:</b> <span style="color: {'#06b6d4' if 'LONG' in new_action else '#ef4444' if 'SHORT' in new_action else '#6b7280'}; font-weight: bold;">{new_action}</span></li>
-        <li><b>Trigger Price:</b> {price:,.1f} USDT</li>
-        <li><b>Model Confidence:</b> {confidence:.1f}%</li>
-        <li><b>Stop Loss (SL):</b> {sl}</li>
-        <li><b>Take Profit (TP):</b> {tp}</li>
-    </ul>
-    <br>
-    <p><i>This is an automated message from your Eurojackpot & Crypto Predictor dashboard.</i></p>
-    """
-
-    msg = MIMEMultipart()
-    msg['From'] = smtp_user
-    msg['To'] = email_to
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'html'))
-
-    try:
-        server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls()
-        server.login(smtp_user, smtp_password)
-        server.sendmail(smtp_user, email_to, msg.as_string())
-        server.close()
-        print(f"Email alert successfully sent to {email_to}")
-        return True
-    except Exception as e:
-        print(f"Failed to send email alert: {e}")
-        return False
-
-def generate_live_prediction():
+def get_prediction_for_symbol(symbol):
     crypto_dir = os.path.dirname(__file__)
-    model_path = os.path.join(crypto_dir, train.MODEL_PATH)
-    scaler_path = os.path.join(crypto_dir, train.SCALER_PATH)
+    sym_lower = symbol.lower().replace("/", "")
+    
+    model_path = os.path.join(crypto_dir, f"crypto_lstm_model_{sym_lower}.keras")
+    scaler_path = os.path.join(crypto_dir, f"crypto_scaler_{sym_lower}.joblib")
     backtest_path = os.path.join(crypto_dir, "crypto_backtest_results.json")
     
     if not os.path.exists(model_path) or not os.path.exists(scaler_path):
-        print("Model or scaler not found. Train the model first.")
-        return False
+        print(f"Model or scaler not found for {symbol}.")
+        return None
         
     model = tf.keras.models.load_model(model_path)
     scaler = joblib.load(scaler_path)
@@ -84,28 +36,26 @@ def generate_live_prediction():
         try:
             with open(backtest_path, "r") as f:
                 bt_data = json.load(f)
-                win_rate = bt_data.get("win_rate", 50.0)
+                win_rate = bt_data.get(sym_lower, {}).get("win_rate", 50.0)
         except Exception:
             pass
             
-    # Fetch 60 candles (plenty to compute sliding indicators of window size 20 + 30)
-    print("Fetching live data from Bybit...")
-    df = bybit_client.fetch_historical_klines(symbol="BTCUSDT", interval="60", limit=60)
+    # Fetch data
+    print(f"Fetching live data for {symbol}...")
+    df = bybit_client.fetch_historical_klines(symbol=symbol, interval="60", limit=60)
     if df is None or len(df) < 40:
-        print("Failed to fetch sufficient data.")
-        return False
+        print(f"Failed to fetch sufficient data for {symbol}.")
+        return None
         
     df_indicators = features.calculate_indicators(df)
-    
     window_size = 20
     data_dict = features.generate_sequences(df_indicators, window_size=window_size)
     
-    # Get the very last sequence
-    X_last = data_dict["X"][-1:] # shape (1, 20, 8)
+    X_last = data_dict["X"][-1:] # (1, 20, 8)
     last_close = data_dict["closes"][-1]
     last_date = data_dict["datetimes"][-1]
     
-    # Calculate ATR (Average True Range) for Stop Loss and Take Profit
+    # Calculate ATR
     high = df["high"]
     low = df["low"]
     close_prev = df["close"].shift(1)
@@ -115,7 +65,7 @@ def generate_live_prediction():
     tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
     atr = float(tr.rolling(14).mean().iloc[-1])
     
-    # Scale input
+    # Scale
     samples, w, num_feats = X_last.shape
     X_last_flat = X_last.reshape(-1, num_feats)
     X_last_scaled_flat = scaler.transform(X_last_flat)
@@ -128,8 +78,7 @@ def generate_live_prediction():
     confidence = prob if prob >= 0.50 else (1.0 - prob)
     confidence_pct = confidence * 100
     
-    # Determine actionable trading advice
-    # Confidence threshold of 54.5% to filter out noisy trades
+    # Action and levels
     if confidence_pct < 54.5:
         action = "WAIT / NEUTRAL"
         stop_loss = 0.0
@@ -143,7 +92,7 @@ def generate_live_prediction():
             stop_loss = last_close + (1.5 * atr)
             take_profit = last_close - (2.0 * atr)
             
-    output = {
+    return {
         "datetime": str(last_date),
         "price": float(last_close),
         "prediction": prediction,
@@ -151,42 +100,71 @@ def generate_live_prediction():
         "raw_prob": prob,
         "win_rate": round(win_rate, 1),
         "action": action,
-        "stop_loss": round(stop_loss, 1) if stop_loss > 0 else "N/A",
-        "take_profit": round(take_profit, 1) if take_profit > 0 else "N/A",
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "stop_loss": round(stop_loss, 2) if stop_loss > 0 else "N/A",
+        "take_profit": round(take_profit, 2) if take_profit > 0 else "N/A"
     }
+
+def generate_live_predictions():
+    symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+    output = {}
     
+    for sym in symbols:
+        pred = get_prediction_for_symbol(sym)
+        if pred is not None:
+            output[sym.lower()] = pred
+            
+    if not output:
+        print("No predictions successfully generated.")
+        return False
+        
+    output["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    crypto_dir = os.path.dirname(__file__)
     output_path = os.path.join(crypto_dir, "crypto_live_prediction.json")
     
-    # Check if prediction changed
-    old_action = None
+    # Check for changes to trigger alerts
+    old_actions = {}
     if os.path.exists(output_path):
         try:
             with open(output_path, "r") as f:
                 old_data = json.load(f)
-                old_action = old_data.get("action")
+                for key in old_data.keys():
+                    if key != "updated_at":
+                        old_actions[key] = old_data[key].get("action")
         except Exception:
             pass
             
-    # Save first
+    # Save output
     with open(output_path, "w") as f:
         json.dump(output, f)
         
-    print(f"Generated live prediction saved to {output_path}")
-    print(output)
+    print(f"Generated multi-token live predictions saved to {output_path}")
     
-    # Send email if action changed
-    if old_action is not None and old_action != action:
-        print(f"Action changed from {old_action} to {action}. Sending email...")
-        send_email_alert(
-            action,
-            output["price"],
-            output["probability"],
-            output["stop_loss"],
-            output["take_profit"]
-        )
+    # Check for shifts and send alerts
+    for key in output.keys():
+        if key == "updated_at":
+            continue
+            
+        sym_name = key.upper()
+        old_act = old_actions.get(key)
+        new_act = output[key].get("action")
         
+        if old_act is not None and old_act != new_act:
+            print(f"[{sym_name}] Action changed from {old_act} to {new_act}. Sending email...")
+            # We trigger the alert email via a helper similar to output_bridge.py
+            # Since the alerts are built in executor or output_bridge, we can write a helper here:
+            from executor import send_alert
+            message = (
+                f"=== {sym_name} TREND ALERT ===\n\n"
+                f"Action Shift: {old_act} -> {new_act}\n"
+                f"Current Price: {output[key]['price']:,.2f} USDT\n"
+                f"Confidence: {output[key]['probability']:.1f}%\n"
+                f"Stop Loss: {output[key]['stop_loss']}\n"
+                f"Take Profit: {output[key]['take_profit']}"
+            )
+            send_alert(f"[AI Bot] {sym_name} Trend Alert: {new_act}", message)
+            
     return True
 
 if __name__ == "__main__":
-    generate_live_prediction()
+    generate_live_predictions()

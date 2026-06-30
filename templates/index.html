@@ -233,47 +233,130 @@
                     </div>
                 </div>
 
-                <div class="glass-card crypto-card" style="margin-top: 24px;">
-                    <h2>BTC/USDT AI Forecast</h2>
-                    <p class="section-desc">Live hourly direction indicator based on Bybit data</p>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding: 12px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid var(--border-color);">
-                        <div>
-                            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 500;">Current Price</div>
-                            <div id="crypto-price" style="font-family: var(--font-outfit); font-size: 18px; font-weight: 700; color: var(--text-primary);">Loading...</div>
+                <div class="crypto-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 24px;">
+                    <!-- BTC Card -->
+                    <div class="glass-card crypto-card" id="card-btc">
+                        <h2>BTC/USDT AI Forecast</h2>
+                        <p class="section-desc">Live 1h direction trend</p>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding: 12px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid var(--border-color);">
+                            <div>
+                                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 500;">Price</div>
+                                <div id="btc-price" style="font-family: var(--font-outfit); font-size: 15px; font-weight: 700; color: var(--text-primary);">Loading...</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 500;">Forecast</div>
+                                <div id="btc-prediction" style="font-family: var(--font-outfit); font-size: 15px; font-weight: 800; text-shadow: 0 0 10px currentColor;">Loading...</div>
+                            </div>
                         </div>
-                        <div style="text-align: right;">
-                            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 500;">Next hour forecast</div>
-                            <div id="crypto-prediction" style="font-family: var(--font-outfit); font-size: 18px; font-weight: 800; text-shadow: 0 0 10px currentColor;">Loading...</div>
+                        
+                        <div class="metrics-grid" style="margin-top: 12px; font-size: 12px;">
+                            <div class="metric-row">
+                                <span class="metric-name">Confidence</span>
+                                <span class="metric-val" id="btc-confidence">Loading...</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Win Rate</span>
+                                <span class="metric-val" id="btc-winrate">Loading...</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Recommendation</span>
+                                <span class="metric-val" id="btc-action" style="font-weight: 700;">Loading...</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Stop Loss (SL)</span>
+                                <span class="metric-val" id="btc-sl" style="font-family: monospace;">Loading...</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Take Profit (TP)</span>
+                                <span class="metric-val" id="btc-tp" style="font-family: monospace;">Loading...</span>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="metrics-grid" style="margin-top: 12px; font-size: 12px;">
-                        <div class="metric-row">
-                            <span class="metric-name">AI Direction Confidence</span>
-                            <span class="metric-val" id="crypto-confidence">Loading...</span>
+                    <!-- ETH Card -->
+                    <div class="glass-card crypto-card" id="card-eth">
+                        <h2>ETH/USDT AI Forecast</h2>
+                        <p class="section-desc">Live 1h direction trend</p>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding: 12px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid var(--border-color);">
+                            <div>
+                                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 500;">Price</div>
+                                <div id="eth-price" style="font-family: var(--font-outfit); font-size: 15px; font-weight: 700; color: var(--text-primary);">Loading...</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 500;">Forecast</div>
+                                <div id="eth-prediction" style="font-family: var(--font-outfit); font-size: 15px; font-weight: 800; text-shadow: 0 0 10px currentColor;">Loading...</div>
+                            </div>
                         </div>
-                        <div class="metric-row">
-                            <span class="metric-name">Backtest Win Rate (1h)</span>
-                            <span class="metric-val" id="crypto-winrate">Loading...</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-name">Action Recommendation</span>
-                            <span class="metric-val" id="crypto-action" style="font-weight: 700;">Loading...</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-name">Stop Loss (SL)</span>
-                            <span class="metric-val" id="crypto-sl" style="font-family: monospace;">Loading...</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-name">Take Profit (TP)</span>
-                            <span class="metric-val" id="crypto-tp" style="font-family: monospace;">Loading...</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-name">Last Updated</span>
-                            <span class="metric-val" id="crypto-updated" style="font-size: 10px; color: var(--text-secondary);">Loading...</span>
+                        
+                        <div class="metrics-grid" style="margin-top: 12px; font-size: 12px;">
+                            <div class="metric-row">
+                                <span class="metric-name">Confidence</span>
+                                <span class="metric-val" id="eth-confidence">Loading...</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Win Rate</span>
+                                <span class="metric-val" id="eth-winrate">Loading...</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Recommendation</span>
+                                <span class="metric-val" id="eth-action" style="font-weight: 700;">Loading...</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Stop Loss (SL)</span>
+                                <span class="metric-val" id="eth-sl" style="font-family: monospace;">Loading...</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Take Profit (TP)</span>
+                                <span class="metric-val" id="eth-tp" style="font-family: monospace;">Loading...</span>
+                            </div>
                         </div>
                     </div>
+                    
+                    <!-- SOL Card -->
+                    <div class="glass-card crypto-card" id="card-sol">
+                        <h2>SOL/USDT AI Forecast</h2>
+                        <p class="section-desc">Live 1h direction trend</p>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding: 12px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid var(--border-color);">
+                            <div>
+                                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 500;">Price</div>
+                                <div id="sol-price" style="font-family: var(--font-outfit); font-size: 15px; font-weight: 700; color: var(--text-primary);">Loading...</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 500;">Forecast</div>
+                                <div id="sol-prediction" style="font-family: var(--font-outfit); font-size: 15px; font-weight: 800; text-shadow: 0 0 10px currentColor;">Loading...</div>
+                            </div>
+                        </div>
+                        
+                        <div class="metrics-grid" style="margin-top: 12px; font-size: 12px;">
+                            <div class="metric-row">
+                                <span class="metric-name">Confidence</span>
+                                <span class="metric-val" id="sol-confidence">Loading...</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Win Rate</span>
+                                <span class="metric-val" id="sol-winrate">Loading...</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Recommendation</span>
+                                <span class="metric-val" id="sol-action" style="font-weight: 700;">Loading...</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Stop Loss (SL)</span>
+                                <span class="metric-val" id="sol-sl" style="font-family: monospace;">Loading...</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Take Profit (TP)</span>
+                                <span class="metric-val" id="sol-tp" style="font-family: monospace;">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="text-align: right; margin-top: 8px; font-size: 10px; color: var(--text-secondary);">
+                    Crypto Portfolio Last Updated: <span id="crypto-updated">Loading...</span>
                 </div>
                 
                 <div class="glass-card chart-card" style="margin-top: 24px;">

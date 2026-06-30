@@ -22,10 +22,10 @@ def get_bybit_headers(payload_str, timestamp):
         "Content-Type": "application/json"
     }
 
-def get_wallet_balances():
+def get_wallet_state():
     """
-    Fetches Unified wallet balances for BTC and USDT, accounting for locked position margin.
-    Returns available USDT margin.
+    Fetches available USDT margin and total USDT wallet balance (cash).
+    Returns (available_margin, total_cash).
     """
     timestamp = str(int(time.time() * 1000))
     params = "accountType=UNIFIED"
@@ -47,26 +47,27 @@ def get_wallet_balances():
         data = res.json()
         if data.get("retCode") == 0:
             coins = data["result"]["list"][0]["coin"]
-            usdt = 0.0
+            usdt_avail = 0.0
+            usdt_total = 12.0 # fallback
             for c in coins:
                 if c["coin"] == "USDT":
                     wb = float(c.get("walletBalance", 0.0) or 0.0)
                     im = float(c.get("totalPositionIM", 0.0) or 0.0)
                     order_im = float(c.get("totalOrderIM", 0.0) or 0.0)
-                    avail = max(0.0, wb - im - order_im)
-                    usdt = avail
-            return usdt
+                    usdt_avail = max(0.0, wb - im - order_im)
+                    usdt_total = wb
+            return usdt_avail, usdt_total
     except Exception as e:
         print(f"Error fetching balances: {e}")
-    return 0.0
+    return 0.0, 12.0
 
-def get_active_position():
+def get_active_position(symbol):
     """
-    Checks if we have an active linear (Futures) position on BTCUSDT.
-    Returns: (side, size) e.g. ("Buy", 0.001) or ("Sell", 0.001) or (None, 0.0)
+    Checks if we have an active linear position on a given symbol.
+    Returns: (side, size) e.g. ("Buy", 0.001) or (None, 0.0)
     """
     timestamp = str(int(time.time() * 1000))
-    params = "category=linear&symbol=BTCUSDT"
+    params = f"category=linear&symbol={symbol}"
     
     val = timestamp + API_KEY + "5000" + params
     signature = hmac.new(API_SECRET.encode('utf-8'), val.encode('utf-8'), hashlib.sha256).hexdigest()
@@ -90,18 +91,15 @@ def get_active_position():
                 if size > 0.0:
                     return pos["side"], size
     except Exception as e:
-        print(f"Error fetching active position: {e}")
+        print(f"Error fetching active position for {symbol}: {e}")
     return None, 0.0
 
-def set_leverage(leverage=10):
-    """
-    Sets leverage for BTCUSDT linear contract.
-    """
+def set_leverage(symbol, leverage=10):
     timestamp = str(int(time.time() * 1000))
     url = "https://api.bybit.com/v5/position/set-leverage"
     payload = {
         "category": "linear",
-        "symbol": "BTCUSDT",
+        "symbol": symbol,
         "buyLeverage": str(leverage),
         "sellLeverage": str(leverage)
     }
@@ -109,71 +107,64 @@ def set_leverage(leverage=10):
     headers = get_bybit_headers(payload_str, timestamp)
     try:
         res = requests.post(url, data=payload_str, headers=headers)
-        # 110043 is "leverage not modified" which is fine to ignore
-        print("Bybit Set Leverage Response:", res.json())
+        print(f"Bybit Set Leverage Response for {symbol}:", res.json())
     except Exception as e:
         print(f"Error setting leverage: {e}")
 
-def open_futures_position(side, size=0.001, sl_price=0.0, tp_price=0.0):
+def open_futures_position(symbol, side, size, sl_price=0.0, tp_price=0.0):
     """
     Opens a futures position with built-in Stop Loss and Take Profit.
     """
-    set_leverage(10)
+    set_leverage(symbol, 10)
     time.sleep(0.5)
     
     timestamp = str(int(time.time() * 1000))
     url = "https://api.bybit.com/v5/order/create"
     
-    # In Hedge Mode: positionIdx = 1 for Buy (Long), 2 for Sell (Short)
     pos_idx = 1 if side == "Buy" else 2
     
     payload = {
         "category": "linear",
-        "symbol": "BTCUSDT",
-        "side": side, # "Buy" for Long, "Sell" for Short
+        "symbol": symbol,
+        "side": side,
         "positionIdx": pos_idx,
         "orderType": "Market",
-        "qty": f"{size:.3f}",
+        "qty": f"{size}",
         "timeInForce": "GTC",
         "tpTriggerBy": "LastPrice",
         "slTriggerBy": "LastPrice"
     }
     
     if sl_price > 0:
-        payload["stopLoss"] = f"{sl_price:.1f}"
+        payload["stopLoss"] = f"{sl_price:.2f}"
     if tp_price > 0:
-        payload["takeProfit"] = f"{tp_price:.1f}"
+        payload["takeProfit"] = f"{tp_price:.2f}"
         
     payload_str = json.dumps(payload)
     headers = get_bybit_headers(payload_str, timestamp)
     try:
         res = requests.post(url, data=payload_str, headers=headers)
         data = res.json()
-        print(f"Bybit Open Futures Response ({side} qty={size}):", data)
+        print(f"Bybit Open Futures Response ({symbol} {side} qty={size}):", data)
         return data
     except Exception as e:
-        print(f"Error opening position: {e}")
+        print(f"Error opening position for {symbol}: {e}")
         return None
 
-def close_futures_position(side, size):
-    """
-    Closes an active futures position.
-    """
+def close_futures_position(symbol, side, size):
     close_side = "Sell" if side == "Buy" else "Buy"
     timestamp = str(int(time.time() * 1000))
     url = "https://api.bybit.com/v5/order/create"
     
-    # In Hedge Mode, positionIdx remains the same as the position we are closing:
-    # 1 for Long (Buy), 2 for Short (Sell)
     pos_idx = 1 if side == "Buy" else 2
     
     payload = {
         "category": "linear",
-        "symbol": "BTCUSDT",
+        "symbol": symbol,
         "side": close_side,
         "positionIdx": pos_idx,
         "orderType": "Market",
-        "qty": f"{size:.3f}",
+        "qty": f"{size}",
         "reduceOnly": True
     }
     
@@ -182,10 +173,10 @@ def close_futures_position(side, size):
     try:
         res = requests.post(url, data=payload_str, headers=headers)
         data = res.json()
-        print(f"Bybit Close Futures Response:", data)
+        print(f"Bybit Close Futures Response for {symbol}:", data)
         return data
     except Exception as e:
-        print(f"Error closing position: {e}")
+        print(f"Error closing position for {symbol}: {e}")
         return None
 
 def send_alert(subject, message):
@@ -230,69 +221,90 @@ def run_execution_loop():
     with open(prediction_path, "r") as f:
         pred_data = json.load(f)
         
-    action = pred_data.get("action", "WAIT / NEUTRAL")
-    current_price = pred_data.get("price")
-    sl = pred_data.get("stop_loss")
-    tp = pred_data.get("take_profit")
+    # Fetch current account wallet status
+    usdt_avail, usdt_total = get_wallet_state()
+    print(f"Balances - Available USDT Margin: {usdt_avail:.2f}, Total Cash: {usdt_total:.2f}")
     
-    # 1. Fetch current status
-    usdt_bal = get_wallet_balances()
-    pos_side, pos_size = get_active_position()
+    symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
     
-    print(f"Balances - Available USDT Margin: {usdt_bal:.2f}")
-    print(f"Active Position - Side: {pos_side}, Size: {pos_size}")
+    # Precision decimal mapping for each contract
+    qty_decimals = {
+        "BTCUSDT": 3,  # Step size: 0.001
+        "ETHUSDT": 2,  # Step size: 0.01
+        "SOLUSDT": 1   # Step size: 0.1
+    }
     
-    # 2. Check alignment with AI prediction
-    target_side = None
-    if action == "BUY / LONG":
-        target_side = "Buy"
-    elif action == "SELL / SHORT":
-        target_side = "Sell"
-        
-    # Case A: We are in the correct position already
-    if pos_side == target_side and pos_side is not None:
-        print(f"Position aligns with target ({pos_side}). No action needed.")
-        return
-        
-    # Case B: We are in a position, but it does NOT align with target (either signal shift or wait signal)
-    if pos_side is not None:
-        print(f"Closing incorrect position ({pos_side} size={pos_size}) due to signal shift...")
-        close_res = close_futures_position(pos_side, pos_size)
-        if close_res and close_res.get("retCode") == 0:
-            message = f"BTC/USDT position CLOSED ({pos_side} size={pos_size}) at price {current_price:,.1f} USDT due to AI signal shift."
-            send_alert("[AI Bot] BTC/USDT Futures Position Closed", message)
-            # Update local state
-            pos_side = None
-            pos_size = 0.0
-            time.sleep(1.0) # wait for settlement
+    min_qty = {
+        "BTCUSDT": 0.001,
+        "ETHUSDT": 0.01,
+        "SOLUSDT": 0.1
+    }
+    
+    for sym in symbols:
+        sym_key = sym.lower()
+        if sym_key not in pred_data:
+            continue
             
-    # Case C: We have no position, and have an active target signal (Buy or Sell)
-    if pos_side is None and target_side is not None:
-        # Dynamic position sizing (Compounding):
-        # We want to use 50% of available USDT balance as margin.
-        # At 10x leverage, Position Value = 10 * (0.5 * usdt_bal) = 5.0 * usdt_bal.
-        # Position Qty in BTC = Position Value / Current Price.
-        target_margin = 0.5 * usdt_bal
-        target_value = 10.0 * target_margin
-        target_qty = target_value / current_price
+        sym_pred = pred_data[sym_key]
+        action = sym_pred.get("action", "WAIT / NEUTRAL")
+        current_price = sym_pred.get("price")
+        sl = sym_pred.get("stop_loss")
+        tp = sym_pred.get("take_profit")
         
-        # Round to 3 decimal places (Bybit step size for BTCUSDT is 0.001)
-        size = max(0.001, round(target_qty, 3))
+        # Check current position
+        pos_side, pos_size = get_active_position(sym)
+        print(f"[{sym}] Active Position - Side: {pos_side}, Size: {pos_size}, AI Action: {action}")
         
-        # Margin required for this position: (size * current_price) / 10.0
-        # We add a 5% safety buffer for price movements during order placement
-        margin_required = (size * current_price / 10.0) * 1.05
-        
-        if usdt_bal >= margin_required:
-            print(f"Opening leveraged 10x Futures position ({target_side}) for {size:.3f} BTC (Margin req: {margin_required:.2f} USDT)...")
-            order_res = open_futures_position(target_side, size=size, sl_price=sl, tp_price=tp)
-            if order_res and order_res.get("retCode") == 0:
-                message = f"BTC/USDT 10x Futures Position OPENED ({target_side} size={size:.3f} BTC) at price {current_price:,.1f} USDT.\nStop Loss (SL): {sl:,.1f} USDT\nTake Profit (TP): {tp:,.1f} USDT"
-                send_alert(f"[AI Bot] BTC/USDT Futures Position Opened - {action}", message)
+        target_side = None
+        if action == "BUY / LONG":
+            target_side = "Buy"
+        elif action == "SELL / SHORT":
+            target_side = "Sell"
+            
+        # Case A: Correct position already running
+        if pos_side == target_side and pos_side is not None:
+            print(f"[{sym}] Position aligns with target ({pos_side}). No action.")
+            continue
+            
+        # Case B: Incorrect position running (signal change or wait signal)
+        if pos_side is not None:
+            print(f"[{sym}] Closing incorrect position ({pos_side} size={pos_size}) due to signal shift...")
+            close_res = close_futures_position(sym, pos_side, pos_size)
+            if close_res and close_res.get("retCode") == 0:
+                message = f"{sym} position CLOSED ({pos_side} size={pos_size}) at price {current_price:,.2f} USDT due to AI signal shift."
+                send_alert(f"[AI Bot] {sym} Futures Position Closed", message)
+                # Refresh local state variables
+                pos_side = None
+                pos_size = 0.0
+                time.sleep(1.0)
+                
+        # Case C: No position, and active signal triggers
+        if pos_side is None and target_side is not None:
+            # Dynamic position sizing (Compounding):
+            # We want to allocate exactly 15% of total USDT balance as margin per coin.
+            # At 10x leverage, Position Value = 10 * (0.15 * usdt_total) = 1.5 * usdt_total.
+            # Position Qty = Position Value / Current Price.
+            target_margin = 0.15 * usdt_total
+            target_value = 10.0 * target_margin
+            target_qty = target_value / current_price
+            
+            # Round according to symbol decimal precision
+            dec = qty_decimals[sym]
+            size = max(min_qty[sym], round(target_qty, dec))
+            
+            # Required margin for this position (with 5% slippage buffer)
+            margin_required = (size * current_price / 10.0) * 1.05
+            
+            if usdt_avail >= margin_required:
+                print(f"[{sym}] Opening 10x Futures position ({target_side}) for {size} (Margin req: {margin_required:.2f} USDT)...")
+                order_res = open_futures_position(sym, target_side, size, sl_price=sl, tp_price=tp)
+                if order_res and order_res.get("retCode") == 0:
+                    message = f"{sym} 10x Futures Position OPENED ({target_side} size={size}) at price {current_price:,.2f} USDT.\nStop Loss (SL): {sl:,.2f} USDT\nTake Profit (TP): {tp:,.2f} USDT"
+                    send_alert(f"[AI Bot] {sym} Futures Position Opened - {action}", message)
+                else:
+                    print(f"[{sym}] Failed to open futures position.")
             else:
-                print("Failed to open futures position.")
-        else:
-            print(f"Insufficient available margin ({usdt_bal:.2f} USDT). Required: {margin_required:.2f} USDT.")
+                print(f"[{sym}] Insufficient available margin ({usdt_avail:.2f} USDT). Required: {margin_required:.2f} USDT.")
 
 if __name__ == "__main__":
     run_execution_loop()

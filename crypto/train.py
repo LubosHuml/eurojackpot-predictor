@@ -1,18 +1,21 @@
 import os
+import sys
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers, models, regularizers
 import joblib
 from sklearn.preprocessing import StandardScaler
+
+# Add project path to sys.path
+project_path = "c:\\Users\\Acer\\Desktop\\Euro"
+sys.path.append(os.path.join(project_path, "crypto"))
+
 import bybit_client
 import features
 
-SCALER_PATH = "crypto_scaler.joblib"
-MODEL_PATH = "crypto_lstm_model.keras"
-
 def build_lstm_model(window_size=20, num_features=8, lstm_units=32, learning_rate=1e-3):
     """
-    Builds the LSTM binary classifier for BTC/USDT price direction.
+    Builds the LSTM binary classifier for price direction.
     """
     model = models.Sequential([
         layers.Input(shape=(window_size, num_features)),
@@ -36,15 +39,15 @@ def build_lstm_model(window_size=20, num_features=8, lstm_units=32, learning_rat
     )
     return model
 
-def train_crypto_model(verbose=1):
+def train_crypto_model(symbol="BTCUSDT", verbose=0):
     # 1. Fetch data
-    print("Fetching Bybit historical K-lines...")
-    df = bybit_client.fetch_historical_klines(symbol="BTCUSDT", interval="60", limit=1000)
-    if df is None:
-        raise Exception("Could not fetch data.")
+    print(f"Fetching Bybit historical K-lines for {symbol}...")
+    df = bybit_client.fetch_historical_klines(symbol=symbol, interval="60", limit=1000)
+    if df is None or len(df) < 50:
+        raise Exception(f"Could not fetch sufficient data for {symbol}.")
         
     # 2. Compute features
-    print("Calculating technical indicators...")
+    print(f"Calculating technical indicators for {symbol}...")
     df_indicators = features.calculate_indicators(df)
     
     # 3. Generate sequences
@@ -59,25 +62,23 @@ def train_crypto_model(verbose=1):
     X_train = X[:-val_split]
     y_train = y[:-val_split]
     
-    X_val = X[-val_split:]
-    y_val = y[-val_split:]
-    
     # 4. Scale features
-    # Since X is 3D (samples, window_size, features), we scale along the feature axis
     scaler = StandardScaler()
     samples, w, num_feats = X_train.shape
     X_train_flat = X_train.reshape(-1, num_feats)
     X_train_scaled_flat = scaler.fit_transform(X_train_flat)
     X_train_scaled = X_train_scaled_flat.reshape(samples, w, num_feats)
     
-    # Save scaler in local folder
-    joblib.dump(scaler, os.path.join(os.path.dirname(__file__), SCALER_PATH))
-    print(f"Scaler saved to {SCALER_PATH}")
+    # Save scaler in local folder with symbol suffix
+    sym_lower = symbol.lower().replace("/", "")
+    scaler_name = f"crypto_scaler_{sym_lower}.joblib"
+    joblib.dump(scaler, os.path.join(os.path.dirname(__file__), scaler_name))
+    print(f"Scaler saved to {scaler_name}")
     
     # 5. Build and train model
     model = build_lstm_model(window_size=window_size, num_features=num_feats)
     
-    print("Training LSTM price predictor...")
+    print(f"Training LSTM price predictor for {symbol}...")
     model.fit(
         X_train_scaled,
         y_train,
@@ -87,11 +88,20 @@ def train_crypto_model(verbose=1):
         verbose=verbose
     )
     
-    # Save model in local folder
-    model_save_path = os.path.join(os.path.dirname(__file__), MODEL_PATH)
+    # Save model in local folder with symbol suffix
+    model_name = f"crypto_lstm_model_{sym_lower}.keras"
+    model_save_path = os.path.join(os.path.dirname(__file__), model_name)
     model.save(model_save_path)
-    print(f"Model saved to {MODEL_PATH}")
+    print(f"Model saved to {model_name}")
     return model, scaler
 
 if __name__ == "__main__":
-    train_crypto_model()
+    symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+    for sym in symbols:
+        print(f"\n==================================================")
+        print(f"          STARTING TRAINING FOR: {sym}")
+        print(f"==================================================")
+        try:
+            train_crypto_model(symbol=sym, verbose=0)
+        except Exception as e:
+            print(f"Training failed for {sym}: {e}")

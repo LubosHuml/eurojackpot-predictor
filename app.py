@@ -650,11 +650,21 @@ def api_crypto_live():
                         import subprocess
                         try:
                             subprocess.run(["python", "crypto/output_bridge.py"])
+                            subprocess.run(["python", "crypto/executor.py"])
                         except Exception:
                             pass
                     threading.Thread(target=refresh_in_bg).start()
             except Exception:
                 pass
+                
+        # Trigger trade monitoring and execution asynchronously
+        def run_executor_bg():
+            import subprocess
+            try:
+                subprocess.run(["python", "crypto/executor.py"])
+            except Exception:
+                pass
+        threading.Thread(target=run_executor_bg).start()
                 
         return jsonify(data)
     except Exception as e:
