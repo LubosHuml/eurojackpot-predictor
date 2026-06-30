@@ -210,6 +210,24 @@ def send_alert(subject, message):
     except Exception as e:
         print(f"Failed to send email alert: {e}")
 
+def load_trade_state():
+    state_path = os.path.join(os.path.dirname(__file__), "crypto_trade_state.json")
+    if os.path.exists(state_path):
+        try:
+            with open(state_path, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+def save_trade_state(state):
+    state_path = os.path.join(os.path.dirname(__file__), "crypto_trade_state.json")
+    try:
+        with open(state_path, "w") as f:
+            json.dump(state, f, indent=4)
+    except Exception as e:
+        print(f"Error saving trade state: {e}")
+
 def run_execution_loop():
     crypto_dir = os.path.dirname(__file__)
     prediction_path = os.path.join(crypto_dir, "crypto_live_prediction.json")
@@ -225,6 +243,7 @@ def run_execution_loop():
     usdt_avail, usdt_total = get_wallet_state()
     print(f"Balances - Available USDT Margin: {usdt_avail:.2f}, Total Cash: {usdt_total:.2f}")
     
+    trade_state = load_trade_state()
     symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
     
     # Precision decimal mapping for each contract
@@ -250,6 +269,7 @@ def run_execution_loop():
         current_price = sym_pred.get("price")
         sl = sym_pred.get("stop_loss")
         tp = sym_pred.get("take_profit")
+        pred_hour = sym_pred.get("datetime")
         
         # Check current position
         pos_side, pos_size = get_active_position(sym)
@@ -280,6 +300,12 @@ def run_execution_loop():
                 
         # Case C: No position, and active signal triggers
         if pos_side is None and target_side is not None:
+            # Re-entry block safety guardrail:
+            # If we already opened a position for this specific hourly prediction window,
+            # we do not open another one (prevents overtrading and SL-whipsaw loops).
+            if trade_state.get(sym_key) == pred_hour:
+                print(f"[{sym}] Already traded during this hourly prediction window ({pred_hour}). Skipping re-entry.")
+                continue
             # Automatic Risk Deleveraging (Compounding with Risk Reduction)
             # As total account balance grows, we automatically reduce leverage and allocation to protect capital:
             # - Under 1k: 15% margin per coin, 10x leverage (Total 45% margin, 4.5x leverage equivalent)
@@ -316,6 +342,9 @@ def run_execution_loop():
                 if order_res and order_res.get("retCode") == 0:
                     message = f"{sym} {leverage}x Futures Position OPENED ({target_side} size={size}) at price {current_price:,.2f} USDT.\nStop Loss (SL): {sl:,.2f} USDT\nTake Profit (TP): {tp:,.2f} USDT"
                     send_alert(f"[AI Bot] {sym} Futures Position Opened - {action}", message)
+                    # Record the hour of the trade to block further re-entries in this window
+                    trade_state[sym_key] = pred_hour
+                    save_trade_state(trade_state)
                 else:
                     print(f"[{sym}] Failed to open futures position.")
             else:
