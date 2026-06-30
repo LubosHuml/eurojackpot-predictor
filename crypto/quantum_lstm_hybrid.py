@@ -68,24 +68,32 @@ def run_hybrid_predictions(count=6):
     lstm_euro_probs = pred_euro_probs[0]
     
     # 3. Quantum Reservoir Computing pipeline
-    # Construct QRC features
+    # Construct 8 QRC features for 8-qubit simulation
     inputs = []
     for i in range(5, len(draws)):
         past_draws = [d['main_nums'] for d in draws[i-5:i]]
         flat_past = np.array(past_draws).flatten()
         mean_val = np.mean(flat_past)
+        std_val = np.std(flat_past)
+        median_val = np.median(flat_past)
         sum_val = np.sum(past_draws[-1])
         even_count = sum(1 for x in past_draws[-1] if x % 2 == 0)
         high_count = sum(1 for x in past_draws[-1] if x > 25)
+        low_count = sum(1 for x in past_draws[-1] if x <= 25)
+        odd_count = sum(1 for x in past_draws[-1] if x % 2 != 0)
         
         f1 = (mean_val - 25.0) / 25.0
         f2 = (sum_val - 125.0) / 125.0
         f3 = (even_count - 2.5) / 2.5
         f4 = (high_count - 2.5) / 2.5
-        inputs.append([f1, f2, f3, f4])
+        f5 = (std_val - 14.4) / 14.4
+        f6 = (median_val - 25.0) / 25.0
+        f7 = (low_count - 2.5) / 2.5
+        f8 = (odd_count - 2.5) / 2.5
+        inputs.append([f1, f2, f3, f4, f5, f6, f7, f8])
     inputs = np.array(inputs)
     
-    qrc = quantum_lotto.QuantumReservoir(n_qubits=4, J_coeff=0.5, h_field=1.0, epsilon=0.1)
+    qrc = quantum_lotto.QuantumReservoir(n_qubits=8, J_coeff=0.5, h_field=1.0, epsilon=0.1)
     qrc_features = []
     for inp in inputs:
         states = qrc.step(inp)
