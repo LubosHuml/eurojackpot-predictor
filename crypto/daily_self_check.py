@@ -108,7 +108,9 @@ def run_self_check():
         
     # 3. Load historical predictions from logs
     predictions_map = {}
-    history_path = os.path.join(crypto_dir, "crypto_predictions_history.jsonl")
+    home_dir = os.path.expanduser("~")
+    config_dir = os.path.join(home_dir, ".bybit_ai_bot")
+    history_path = os.path.join(config_dir, "crypto_predictions_history.jsonl")
     if os.path.exists(history_path):
         try:
             with open(history_path, "r") as f:

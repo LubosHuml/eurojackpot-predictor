@@ -221,18 +221,39 @@ def send_alert(subject, message):
     except Exception as e:
         print(f"Failed to send email alert: {e}")
 
+def get_state_path():
+    home_dir = os.path.expanduser("~")
+    config_dir = os.path.join(home_dir, ".bybit_ai_bot")
+    if not os.path.exists(config_dir):
+        try:
+            os.makedirs(config_dir)
+        except Exception:
+            return os.path.join(home_dir, ".bybit_crypto_trade_state.json")
+    return os.path.join(config_dir, "crypto_trade_state.json")
+
 def load_trade_state():
-    state_path = os.path.join(os.path.dirname(__file__), "crypto_trade_state.json")
+    state_path = get_state_path()
     if os.path.exists(state_path):
         try:
             with open(state_path, "r") as f:
                 return json.load(f)
         except Exception:
             pass
+            
+    # Backwards compatibility check
+    local_path = os.path.join(os.path.dirname(__file__), "crypto_trade_state.json")
+    if os.path.exists(local_path):
+        try:
+            with open(local_path, "r") as f:
+                data = json.load(f)
+                save_trade_state(data)
+                return data
+        except Exception:
+            pass
     return {}
 
 def save_trade_state(state):
-    state_path = os.path.join(os.path.dirname(__file__), "crypto_trade_state.json")
+    state_path = get_state_path()
     try:
         with open(state_path, "w") as f:
             json.dump(state, f, indent=4)

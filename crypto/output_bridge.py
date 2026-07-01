@@ -189,7 +189,14 @@ def generate_live_predictions():
         json.dump(output, f)
         
     # Append to history for daily audit self-checks
-    history_path = os.path.join(crypto_dir, "crypto_predictions_history.jsonl")
+    home_dir = os.path.expanduser("~")
+    config_dir = os.path.join(home_dir, ".bybit_ai_bot")
+    if not os.path.exists(config_dir):
+        try:
+            os.makedirs(config_dir)
+        except Exception:
+            config_dir = home_dir
+    history_path = os.path.join(config_dir, "crypto_predictions_history.jsonl")
     try:
         with open(history_path, "a") as hf:
             hf.write(json.dumps(output) + "\n")
