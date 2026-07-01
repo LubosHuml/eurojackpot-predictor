@@ -41,9 +41,12 @@ def start_crypto_scheduler():
         time.sleep(10)
         
         last_lotto_sync = 0
+        last_audit_date = ""
         
         while True:
             current_time = time.time()
+            from datetime import datetime
+            now_dt = datetime.now()
             
             # Run automatic lottery database sync and ticket evaluation every 6 hours (21600 seconds)
             if current_time - last_lotto_sync > 21600:
@@ -78,6 +81,17 @@ def start_crypto_scheduler():
                 subprocess.run([sys.executable, "crypto/executor.py"])
             except Exception as e:
                 print(f"[Scheduler] Loop execution error: {e}")
+                
+            # Run daily self-check audit around 21:00 CET
+            current_date = now_dt.strftime("%Y-%m-%d")
+            if now_dt.hour >= 21 and last_audit_date != current_date:
+                try:
+                    print("[Scheduler] Running daily self-check audit (daily_self_check.py)...")
+                    subprocess.run([sys.executable, "crypto/daily_self_check.py"])
+                    last_audit_date = current_date
+                except Exception as ex:
+                    print(f"[Scheduler] Daily self-check error: {ex}")
+                    
             # Run every 5 minutes (300 seconds)
             time.sleep(300)
             

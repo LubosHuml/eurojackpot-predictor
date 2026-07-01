@@ -188,6 +188,14 @@ def generate_live_predictions():
     with open(output_path, "w") as f:
         json.dump(output, f)
         
+    # Append to history for daily audit self-checks
+    history_path = os.path.join(crypto_dir, "crypto_predictions_history.jsonl")
+    try:
+        with open(history_path, "a") as hf:
+            hf.write(json.dumps(output) + "\n")
+    except Exception as e:
+        print(f"Error saving predictions history: {e}")
+        
     print(f"Generated multi-token live predictions saved to {output_path}")
     
     # Check for shifts and send alerts

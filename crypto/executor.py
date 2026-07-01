@@ -197,7 +197,12 @@ def send_alert(subject, message):
     smtp_password = os.environ.get("SMTP_PASSWORD")
 
     if not smtp_user or not smtp_password:
-        print(f"SMTP credentials missing. Alert logged locally: {subject} - {message}")
+        try:
+            print(f"SMTP credentials missing. Alert logged locally: {subject}\n{message}")
+        except UnicodeEncodeError:
+            safe_subj = subject.encode('ascii', errors='replace').decode('ascii')
+            safe_msg = message.encode('ascii', errors='replace').decode('ascii')
+            print(f"SMTP credentials missing. Alert logged locally: {safe_subj}\n{safe_msg}")
         return
 
     msg = MIMEMultipart()
