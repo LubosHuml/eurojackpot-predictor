@@ -553,6 +553,8 @@ def api_predictions():
             
             return jsonify(res)
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return jsonify({"error": f"Failed to generate hybrid predictions: {str(e)}"}), 500
 
 @app.route("/api/update", methods=["POST"])

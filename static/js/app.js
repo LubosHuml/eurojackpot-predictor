@@ -190,19 +190,16 @@ async function fetchPredictions() {
     
     try {
         const res = await fetch(`/api/predictions?game=${currentGame}`);
-        const data = await res.json();
-        
-        if (data.error) {
-            listContainer.innerHTML = `
-                <div class="loading-spinner-container">
-                    <p style="color: #ef4444; font-weight: 500;">AI Model is not trained yet. Please initiate training below.</p>
-                </div>
-            `;
-            // Reset structural ranges
-            document.getElementById("val-pred-sum").textContent = "N/A";
-            document.getElementById("bar-pred-sum").style.width = "0%";
-            return;
+        if (!res.ok) {
+            const errText = await res.text();
+            let parsedErr = errText;
+            try {
+                const errJson = JSON.parse(errText);
+                parsedErr = errJson.error || errText;
+            } catch(e) {}
+            throw new Error(parsedErr);
         }
+        const data = await res.json();
         
         predictionsData = data;
         
@@ -232,7 +229,7 @@ async function fetchPredictions() {
         console.error("Error fetching predictions:", err);
         listContainer.innerHTML = `
             <div class="loading-spinner-container">
-                <p style="color: #ef4444; font-weight: 500;">Connection error to quantitative engine.</p>
+                <p style="color: #ef4444; font-weight: 500; text-align: center;">Error: ${err.message}</p>
             </div>
         `;
     }
