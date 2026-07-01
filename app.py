@@ -88,7 +88,11 @@ def start_crypto_scheduler():
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
 # Start 24/7 Bybit automation thread at module load time (supports Gunicorn workers)
-start_crypto_scheduler()
+# Disable on Render cloud host because Bybit blocks Render's IP addresses
+if os.environ.get("RENDER") != "true":
+    start_crypto_scheduler()
+else:
+    print("[Scheduler] Running on Render cloud host. Bybit trading scheduler is DISABLED to prevent CloudFront 403 blocks.")
 
 # Global state for background training task
 training_status = {
@@ -603,19 +607,55 @@ def api_lotto_quantum():
         return jsonify({"error": "Invalid game type."}), 400
         
     try:
+        cache_file = f"quantum_prediction_cache_{game}.json"
+        db_file = "eurojackpot.db" if game == "eurojackpot" else "sportka.db"
+        
+        # Check if cache is valid (exists and is newer than database)
+        if os.path.exists(cache_file) and os.path.exists(db_file):
+            cache_mtime = os.path.getmtime(cache_file)
+            db_mtime = os.path.getmtime(db_file)
+            if cache_mtime > db_mtime:
+                try:
+                    with open(cache_file, "r") as f:
+                        return jsonify(json.load(f))
+                except Exception:
+                    pass
+                    
+        # Otherwise, calculate and cache it
         sys.path.append(os.path.join(os.path.dirname(__file__), "crypto"))
         import quantum_lotto
-        # Reload to prevent stale cache if database updates
         import importlib
         importlib.reload(quantum_lotto)
         res = quantum_lotto.run_quantum_prediction(game)
+        
+        try:
+            with open(cache_file, "w") as f:
+                json.dump(res, f)
+        except Exception:
+            pass
+            
         return jsonify(res)
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api/crypto/live", methods=["GET"])
 def api_crypto_live():
     prediction_path = os.path.join("crypto", "crypto_live_prediction.json")
+    
+    # On Render cloud host, Bybit blocks all requests, so return cached predictions directly
+    if os.environ.get("RENDER") == "true":
+        if os.path.exists(prediction_path):
+            try:
+                with open(prediction_path, "r") as f:
+                    return jsonify(json.load(f))
+            except Exception as e:
+                return jsonify({"error": f"Failed to load cached prediction: {str(e)}"}), 500
+        else:
+            return jsonify({"error": "No cached predictions found on Render."}), 404
+            
+    # Local developer/notebook mode
     if not os.path.exists(prediction_path):
         import subprocess
         try:
