@@ -155,7 +155,7 @@ def get_prediction_for_symbol(symbol):
     }
 
 def generate_live_predictions():
-    symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+    symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "RUNEUSDT"]
     output = {}
     
     for sym in symbols:

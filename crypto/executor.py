@@ -277,19 +277,21 @@ def run_execution_loop():
     
     trade_state = load_trade_state()
     
-    symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+    symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "RUNEUSDT"]
     
     # Precision decimal mapping for each contract
     qty_decimals = {
         "BTCUSDT": 3,  # Step size: 0.001
         "ETHUSDT": 2,  # Step size: 0.01
-        "SOLUSDT": 1   # Step size: 0.1
+        "SOLUSDT": 1,  # Step size: 0.1
+        "RUNEUSDT": 1  # Step size: 0.1
     }
     
     min_qty = {
         "BTCUSDT": 0.001,
         "ETHUSDT": 0.01,
-        "SOLUSDT": 0.1
+        "SOLUSDT": 0.1,
+        "RUNEUSDT": 0.1
     }
     
     for sym in symbols:
@@ -339,8 +341,8 @@ def run_execution_loop():
             if trade_state.get(sym_key) == pred_hour:
                 print(f"[{sym}] Already traded during this hourly prediction window ({pred_hour}). Skipping re-entry.")
                 continue
-            # Set allocation weight to 16.67% of total balance per coin (50% split among 3 coins)
-            alloc_pct = 0.50 / 3.0
+            # Set allocation weight dynamically (50% total split among active trading symbols)
+            alloc_pct = 0.50 / float(len(symbols))
             if usdt_total < 1000.0:
                 leverage = 10
             elif usdt_total < 5000.0:
