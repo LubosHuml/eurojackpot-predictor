@@ -8,10 +8,7 @@ let currentGame = 'eurojackpot';
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", () => {
-    fetchStatus();
-    fetchMetrics();
-    fetchPredictions();
-    fetchTickets();
+    switchGame(currentGame);
     fetchCrypto();
     // Poll crypto prediction every 60 seconds
     setInterval(fetchCrypto, 60000);
