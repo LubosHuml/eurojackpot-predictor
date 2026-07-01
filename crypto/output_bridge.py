@@ -14,6 +14,7 @@ sys.path.append(os.path.join(project_path, "crypto"))
 
 import bybit_client
 import features
+import quantum_lotto
 
 def get_prediction_for_symbol(symbol):
     crypto_dir = os.path.dirname(__file__)
@@ -48,12 +49,58 @@ def get_prediction_for_symbol(symbol):
         return None
         
     df_indicators = features.calculate_indicators(df)
-    window_size = 20
-    data_dict = features.generate_sequences(df_indicators, window_size=window_size)
     
-    X_last = data_dict["X"][-1:] # (1, 20, 8)
-    last_close = data_dict["closes"][-1]
-    last_date = data_dict["datetimes"][-1]
+    # Scale indicators to [-1, 1] for Dual 4-qubit Quantum Reservoirs
+    close_sma10 = df_indicators["close_to_sma10"].values
+    close_ema10 = df_indicators["close_to_ema10"].values
+    sma10_sma30 = df_indicators["sma10_to_sma30"].values
+    bb_pos = df_indicators["bb_position"].values
+    rsi_vals = df_indicators["rsi"].values
+    log_ret = df_indicators["log_return"].values
+    vol = df_indicators["volatility"].values
+    vol_chg = df_indicators["volume_change"].values
+    
+    u_res_a = np.column_stack([
+        np.clip(close_sma10 * 20.0, -1.0, 1.0),
+        np.clip(close_ema10 * 20.0, -1.0, 1.0),
+        np.clip(sma10_sma30 * 20.0, -1.0, 1.0),
+        np.clip(2.0 * bb_pos - 1.0, -1.0, 1.0)
+    ])
+    
+    u_res_b = np.column_stack([
+        np.clip(2.0 * rsi_vals - 1.0, -1.0, 1.0),
+        np.clip(log_ret * 50.0, -1.0, 1.0),
+        np.clip(vol * 200.0 - 1.0, -1.0, 1.0),
+        np.clip(np.tanh(vol_chg), -1.0, 1.0)
+    ])
+    
+    # Simulate Dual 4-qubit Quantum Reservoirs
+    res_a = quantum_lotto.QuantumReservoir(n_qubits=4, J_coeff=0.5, h_field=1.0, epsilon=0.1)
+    res_b = quantum_lotto.QuantumReservoir(n_qubits=4, J_coeff=0.5, h_field=1.0, epsilon=0.1)
+    
+    q_feats_a = []
+    q_feats_b = []
+    
+    for idx in range(len(df_indicators)):
+        q_feats_a.append(res_a.step(u_res_a[idx]))
+        q_feats_b.append(res_b.step(u_res_b[idx]))
+        
+    q_feats_a = np.array(q_feats_a)
+    q_feats_b = np.array(q_feats_b)
+    
+    classical_feats = df_indicators[[
+        "close_to_sma10", "close_to_ema10", "sma10_to_sma30",
+        "bb_position", "rsi", "log_return", "volatility", "volume_change"
+    ]].values
+    
+    # 8 classical + 24 quantum = 32 features
+    total_feats = np.column_stack([classical_feats, q_feats_a, q_feats_b])
+    
+    window_size = 20
+    X_last = np.expand_dims(total_feats[-window_size:], axis=0) # (1, 20, 32)
+    
+    last_close = float(df_indicators["close"].iloc[-1])
+    last_date = df_indicators["datetime"].iloc[-1]
     
     # Calculate ATR
     high = df["high"]

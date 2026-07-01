@@ -325,23 +325,15 @@ def run_execution_loop():
             if trade_state.get(sym_key) == pred_hour:
                 print(f"[{sym}] Already traded during this hourly prediction window ({pred_hour}). Skipping re-entry.")
                 continue
-            # Automatic Risk Deleveraging (Compounding with Risk Reduction)
-            # As total account balance grows, we automatically reduce leverage and allocation to protect capital:
-            # - Under 1k: 15% margin per coin, 10x leverage (Total 45% margin, 4.5x leverage equivalent)
-            # - 1k to 5k: 10% margin per coin, 8x leverage  (Total 30% margin, 2.4x leverage equivalent)
-            # - 5k to 20k: 6% margin per coin, 5x leverage  (Total 18% margin, 0.9x leverage equivalent)
-            # - Over 20k:  3% margin per coin, 3x leverage  (Total 9% margin, 0.27x leverage equivalent)
+            # Set allocation weight to exactly 50% of the deposit for BTCUSDT as requested
+            alloc_pct = 0.50
             if usdt_total < 1000.0:
-                alloc_pct = 0.15
                 leverage = 10
             elif usdt_total < 5000.0:
-                alloc_pct = 0.10
                 leverage = 8
             elif usdt_total < 20000.0:
-                alloc_pct = 0.06
                 leverage = 5
             else:
-                alloc_pct = 0.03
                 leverage = 3
                 
             target_margin = alloc_pct * usdt_total
