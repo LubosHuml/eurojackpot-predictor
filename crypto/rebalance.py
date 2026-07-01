@@ -2,8 +2,8 @@ import os
 import sys
 import time
 
-# Add project path to sys.path
-project_path = "c:\\Users\\Acer\\Desktop\\Euro"
+# Add project path dynamically to sys.path
+project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(project_path, "crypto"))
 
 import executor

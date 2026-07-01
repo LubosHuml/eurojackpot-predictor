@@ -6,8 +6,8 @@ from tensorflow.keras import layers, models, regularizers
 import joblib
 from sklearn.preprocessing import StandardScaler
 
-# Add project path to sys.path
-project_path = "c:\\Users\\Acer\\Desktop\\Euro"
+# Add project path dynamically to sys.path
+project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(project_path, "crypto"))
 
 import bybit_client
@@ -46,6 +46,9 @@ def train_crypto_model(symbol="BTCUSDT", verbose=0):
     df = bybit_client.fetch_historical_klines(symbol=symbol, interval="60", limit=1000)
     if df is None or len(df) < 200:
         raise Exception(f"Could not fetch sufficient data for {symbol}.")
+        
+    # Discard the last (current incomplete) candle to match the inference pipeline
+    df = df.iloc[:-1].reset_index(drop=True)
         
     # 2. Compute features
     print(f"Calculating technical indicators for {symbol}...")

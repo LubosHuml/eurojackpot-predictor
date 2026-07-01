@@ -6,8 +6,8 @@ import tensorflow as tf
 import joblib
 import json
 
-# Add project path to sys.path
-project_path = "c:\\Users\\Acer\\Desktop\\Euro"
+# Add project path dynamically to sys.path
+project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(project_path, "crypto"))
 
 import bybit_client
@@ -30,6 +30,8 @@ def run_single_backtest(symbol, val_split=150):
     
     # Fetch data
     df = bybit_client.fetch_historical_klines(symbol=symbol, interval="60", limit=1000)
+    # Discard the last (current incomplete) candle to match the training/inference pipeline
+    df = df.iloc[:-1].reset_index(drop=True)
     df_indicators = features.calculate_indicators(df)
     
     # Scale indicators to [-1, 1] for Dual 4-qubit Quantum Reservoirs

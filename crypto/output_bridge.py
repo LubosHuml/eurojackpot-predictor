@@ -8,8 +8,8 @@ import json
 import time
 from datetime import datetime
 
-# Add project path to sys.path
-project_path = "c:\\Users\\Acer\\Desktop\\Euro"
+# Add project path dynamically to sys.path
+project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(project_path, "crypto"))
 
 import bybit_client
@@ -47,6 +47,9 @@ def get_prediction_for_symbol(symbol):
     if df is None or len(df) < 40:
         print(f"Failed to fetch sufficient data for {symbol}.")
         return None
+        
+    # Discard the last (current incomplete) candle to prevent whipsawing on real-time price updates
+    df = df.iloc[:-1].reset_index(drop=True)
         
     df_indicators = features.calculate_indicators(df)
     

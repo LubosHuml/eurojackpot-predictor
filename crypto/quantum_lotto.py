@@ -5,8 +5,8 @@ import sqlite3
 import json
 from scipy.linalg import expm
 
-# Add project path to sys.path
-project_path = "c:\\Users\\Acer\\Desktop\\Euro"
+# Add project path dynamically to sys.path
+project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_path)
 
 # Pauli matrices

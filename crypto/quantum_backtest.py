@@ -2,8 +2,8 @@ import os
 import sys
 import numpy as np
 
-# Add project path to sys.path
-project_path = "c:\\Users\\Acer\\Desktop\\Euro"
+# Add project path dynamically to sys.path
+project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_path)
 
 import crypto.quantum_lotto as quantum_lotto
