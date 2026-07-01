@@ -251,19 +251,7 @@ def run_execution_loop():
     
     trade_state = load_trade_state()
     
-    # Close legacy positions for disabled assets (ETH and SOL) to prevent unmanaged risk
-    for sym in ["ETHUSDT", "SOLUSDT"]:
-        try:
-            pos_side, pos_size = get_active_position(sym)
-            if pos_side is not None and pos_size > 0.0:
-                print(f"[Cleanup] Closing legacy position for disabled symbol {sym} ({pos_side} size={pos_size})...")
-                close_res = close_futures_position(sym, pos_side, pos_size)
-                if close_res and close_res.get("retCode") == 0:
-                    send_alert(f"[AI Bot] Closed Legacy {sym}", f"Successfully closed orphaned position for {sym} ({pos_side} size={pos_size}) on Bybit.")
-        except Exception as e:
-            print(f"Error cleaning up disabled symbol {sym}: {e}")
-            
-    symbols = ["BTCUSDT"]
+    symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
     
     # Precision decimal mapping for each contract
     qty_decimals = {
@@ -325,8 +313,8 @@ def run_execution_loop():
             if trade_state.get(sym_key) == pred_hour:
                 print(f"[{sym}] Already traded during this hourly prediction window ({pred_hour}). Skipping re-entry.")
                 continue
-            # Set allocation weight to exactly 50% of the deposit for BTCUSDT as requested
-            alloc_pct = 0.50
+            # Set allocation weight to 16.67% of total balance per coin (50% split among 3 coins)
+            alloc_pct = 0.50 / 3.0
             if usdt_total < 1000.0:
                 leverage = 10
             elif usdt_total < 5000.0:
