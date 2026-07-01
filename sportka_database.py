@@ -101,12 +101,13 @@ def load_csv_data():
                 # Skip header-like or empty rows
                 continue
                 
+    inserted = conn.total_changes
     conn.commit()
-    # Get total count
     cursor.execute("SELECT COUNT(*) FROM draws")
     total = cursor.fetchone()[0]
     conn.close()
-    print(f"Loaded CSV data. Total rows in database: {total}")
+    print(f"Loaded CSV data. Total rows in database: {total}, new: {inserted}")
+    return inserted
 
 def get_all_draws():
     conn = sqlite3.connect(DB_PATH)

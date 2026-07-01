@@ -385,7 +385,7 @@ async function triggerTrain() {
     btn.disabled = true;
     
     try {
-        const res = await fetch("/api/train", { method: "POST" });
+        const res = await fetch(`/api/train?game=${currentGame}`, { method: "POST" });
         const data = await res.json();
         
         if (data.success) {

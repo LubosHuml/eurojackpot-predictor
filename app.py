@@ -39,7 +39,38 @@ def start_crypto_scheduler():
         print("[Scheduler] Crypto 24/7 background loop started (Active Worker).")
         # Initial sleep buffer to let Flask server bind and initialize
         time.sleep(10)
+        
+        last_lotto_sync = 0
+        
         while True:
+            current_time = time.time()
+            
+            # Run automatic lottery database sync and ticket evaluation every 6 hours (21600 seconds)
+            if current_time - last_lotto_sync > 21600:
+                try:
+                    print("[Scheduler] Running automatic lottery database sync and ticket evaluation...")
+                    # Update Eurojackpot draws
+                    inserted = scraper.update_database(force_all=False)
+                    evaluate_pending_tickets()
+                    if inserted > 0:
+                        print(f"[Scheduler] Found {inserted} new Eurojackpot draws. Triggering background retraining...")
+                        t_train = threading.Thread(target=background_training_thread)
+                        t_train.daemon = True
+                        t_train.start()
+                    
+                    # Update Sportka draws from CSV
+                    sportka_inserted = sportka_database.load_csv_data() or 0
+                    evaluate_sportka_pending_tickets()
+                    if sportka_inserted > 0:
+                        print(f"[Scheduler] Found {sportka_inserted} new Sportka draws. Triggering background retraining...")
+                        t_train = threading.Thread(target=background_sportka_training_thread)
+                        t_train.daemon = True
+                        t_train.start()
+                        
+                    last_lotto_sync = current_time
+                except Exception as ex:
+                    print(f"[Scheduler] Lotto automatic sync error: {ex}")
+                    
             try:
                 print("[Scheduler] Running price fetch and predictions (output_bridge.py)...")
                 subprocess.run([sys.executable, "crypto/output_bridge.py"])
@@ -536,15 +567,30 @@ def api_update():
             os.remove(METRICS_PATH)
             
         # Update Sportka database from CSV and evaluate pending tickets
-        sportka_database.load_csv_data()
+        sportka_inserted = sportka_database.load_csv_data() or 0
         evaluate_sportka_pending_tickets()
         if os.path.exists("sportka_metrics.json"):
             try:
                 os.remove("sportka_metrics.json")
             except Exception:
                 pass
+                
+        # Trigger automatic background retraining if new draws were imported
+        if inserted > 0:
+            if not training_status["is_training"]:
+                thread = threading.Thread(target=background_training_thread)
+                thread.daemon = True
+                thread.start()
+                print("Eurojackpot auto-retrain triggered.")
+                
+        if sportka_inserted > 0:
+            if not training_status["is_training"]:
+                thread = threading.Thread(target=background_sportka_training_thread)
+                thread.daemon = True
+                thread.start()
+                print("Sportka auto-retrain triggered.")
             
-        return jsonify({"success": True, "inserted": inserted})
+        return jsonify({"success": True, "inserted": inserted, "sportka_inserted": sportka_inserted})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -697,6 +743,47 @@ def background_training_thread():
     finally:
         training_status["is_training"] = False
 
+def background_sportka_training_thread():
+    """Background training worker to avoid blocking Flask web process for Sportka."""
+    global training_status
+    try:
+        training_status["is_training"] = True
+        training_status["error"] = None
+        
+        print("Background Sportka training started...")
+        # Scrape and update DB
+        sportka_database.load_csv_data()
+        
+        # Compute features
+        draws = sportka_database.get_all_draws()
+        df_features = sportka_features.compute_draw_features(draws)
+        
+        # Sequences (w=10)
+        data_dict = sportka_features.generate_sequences(df_features, window_size=10)
+        
+        # Train & Prune (using 25 epochs)
+        sportka_train.train_and_prune(
+            data_dict=data_dict,
+            window_size=10,
+            epochs=25,
+            verbose=0
+        )
+        
+        # Force metric cache clearing
+        if os.path.exists("sportka_metrics.json"):
+            try:
+                os.remove("sportka_metrics.json")
+            except Exception:
+                pass
+            
+        training_status["last_success"] = datetime.now().isoformat()
+        print("Background Sportka training completed successfully.")
+    except Exception as e:
+        training_status["error"] = str(e)
+        print(f"Background Sportka training failed: {e}")
+    finally:
+        training_status["is_training"] = False
+
 @app.route("/api/train", methods=["POST"])
 def api_train():
     """Launches the background training thread if not already running."""
@@ -704,10 +791,15 @@ def api_train():
     if training_status["is_training"]:
         return jsonify({"error": "Training is already in progress."}), 400
         
-    thread = threading.Thread(target=background_training_thread)
+    game = request.args.get("game", "eurojackpot")
+    if game == "sportka":
+        thread = threading.Thread(target=background_sportka_training_thread)
+    else:
+        thread = threading.Thread(target=background_training_thread)
+        
     thread.daemon = True
     thread.start()
-    return jsonify({"success": True, "message": "Model training initiated in the background."})
+    return jsonify({"success": True, "message": f"Model training for {game} initiated in the background."})
 
 @app.route("/api/tickets", methods=["GET"])
 def api_tickets():
