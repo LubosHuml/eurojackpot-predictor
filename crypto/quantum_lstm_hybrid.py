@@ -133,10 +133,10 @@ def run_hybrid_predictions(count=6):
         f4 = (high_count - 2.5) / 2.5
         
         # Normalize physical features to [-1, 1] range
-        f5 = (p_avg - 13.0) / 2.0
-        f6 = (p_max - 35.0) / 3.0
-        f7 = (p_col - 260.0) / 50.0
-        f8 = (p_eject - 14.5) / 3.0
+        f5 = 2.0 * (p_avg - 9.0) / (18.0 - 9.0) - 1.0
+        f6 = 2.0 * (p_max - 30.0) / (37.0 - 30.0) - 1.0
+        f7 = 2.0 * (p_col - 0.0) / (400.0 - 0.0) - 1.0
+        f8 = 2.0 * (p_eject - 2.0) / (25.0 - 2.0) - 1.0
         
         inputs.append([f1, f2, f3, f4, f5, f6, f7, f8])
     inputs = np.array(inputs)
