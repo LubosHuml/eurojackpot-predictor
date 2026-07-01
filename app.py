@@ -506,154 +506,23 @@ def api_predictions():
             return jsonify({"error": f"Failed to generate predictions for Sportka: {str(e)}"}), 500
             
     else:
-        status = get_db_status()
-        if not status["model_trained"]:
-            return jsonify({"error": "Model is not trained yet."}), 400
-            
         try:
-            # Load assets
-            model = tf.keras.models.load_model(MODEL_PATH)
-            scaler_x = joblib.load(train.SCALER_X_PATH)
-            scaler_sum = joblib.load(train.SCALER_SUM_PATH)
-            scaler_counts = joblib.load(train.SCALER_COUNTS_PATH)
-            
-            # Compute features
-            draws = database.get_all_draws()
-            df_features = features.compute_draw_features(draws)
-            
-            # Last window input (w=10)
-            window_size = 10
-            feature_cols = [
-                'mean', 'std', 'median', 'sum', 'product_diff',
-                'even_count', 'odd_count', 'low_count', 'high_count',
-                'cpr_pp', 'cpr_bc', 'cpr_tc', 'vwap'
-            ]
-            num_features = df_features[feature_cols].values
-            main_nums = df_features[['num1', 'num2', 'num3', 'num4', 'num5']].values
-            euro_nums = df_features[['euro1', 'euro2']].values
-            
-            X_num_last = np.expand_dims(num_features[-window_size:], axis=0).astype(np.float32)
-            X_main_last = np.expand_dims(main_nums[-window_size:], axis=0).astype(np.int32)
-            X_euro_last = np.expand_dims(euro_nums[-window_size:], axis=0).astype(np.int32)
-            
-            # Scale
-            X_num_scaled = train.transform_3d(scaler_x, X_num_last)
-            
-            # Predict
-            pred_sum_scaled, pred_counts_scaled, pred_main_probs, pred_euro_probs = model.predict(
-                [X_num_scaled, X_main_last, X_euro_last],
-                verbose=0
-            )
-            
-            # Inverse scale
-            next_pred_sum = float(scaler_sum.inverse_transform(pred_sum_scaled)[0, 0])
-            next_pred_counts = scaler_counts.inverse_transform(pred_counts_scaled)[0]
-            
-            # Probabilities
-            next_main_probs = pred_main_probs[0]
-            next_euro_probs = pred_euro_probs[0]
-            
-            # Seed generator deterministically based on latest draw date to prevent re-generation on refresh
-            import hashlib
-            latest_date = database.get_latest_draw_date()
-            seed_src = latest_date if latest_date else "default_seed_key"
-            seed = int(hashlib.md5(seed_src.encode('utf-8')).hexdigest(), 16) % (2**32)
-            np.random.seed(seed)
-            
-            # Generate exactly 6 bets: 2 Conservative (T=0.2), 2 Balanced (T=1.0), 2 Unique (T=2.0)
-            bets_c = generator.generate_bets(next_main_probs, next_euro_probs, next_pred_sum, next_pred_counts, temperature=0.2, count=2)
-            bets_b = generator.generate_bets(next_main_probs, next_euro_probs, next_pred_sum, next_pred_counts, temperature=1.0, count=2)
-            bets_u = generator.generate_bets(next_main_probs, next_euro_probs, next_pred_sum, next_pred_counts, temperature=2.0, count=2)
-            
-            # Merge lists
-            raw_bets = [
-                (bets_c[0], "Conservative"),
-                (bets_c[1], "Conservative"),
-                (bets_b[0], "Balanced"),
-                (bets_b[1], "Balanced"),
-                (bets_u[0], "Unique"),
-                (bets_u[1], "Unique")
-            ]
-            
-            # Calculate max bounds for relative normalization
-            max_p_m = float(np.max(next_main_probs))
-            max_p_e = float(np.max(next_euro_probs))
-            
-            bets_list = []
-            for idx, (comb, profile) in enumerate(raw_bets):
-                m_nums = [int(x) for x in comb[0]]
-                e_nums = [int(y) for y in comb[1]]
+            sys.path.append(os.path.join(os.path.dirname(__file__), "crypto"))
+            import quantum_lstm_hybrid
+            import importlib
+            importlib.reload(quantum_lstm_hybrid)
+            res = quantum_lstm_hybrid.run_hybrid_predictions(count=6)
+            if "error" in res:
+                return jsonify(res), 500
                 
-                # Confidence metric: compares values to absolute hottest numbers
-                mean_p_m = float(np.mean([next_main_probs[x-1] for x in m_nums]))
-                mean_p_e = float(np.mean([next_euro_probs[y-1] for y in e_nums]))
-                
-                confidence = (mean_p_m / max_p_m) * 60 + (mean_p_e / max_p_e) * 40
-                
-                bets_list.append({
-                    "id": idx + 1,
-                    "profile": profile,
-                    "main_nums": m_nums,
-                    "euro_nums": e_nums,
-                    "confidence": round(confidence, 1)
-                })
-                
-            # SYSTEM TICKET GENERATION: 7-number covering wheel
-            top7_idx = np.argsort(next_main_probs)[-7:]
-            top7_nums = sorted([int(x + 1) for x in top7_idx])
-            top3_euro_idx = np.argsort(next_euro_probs)[-3:]
-            top3_euro = sorted([int(x + 1) for x in top3_euro_idx])
+            # Add estimated fields to make it fully compatible with legacy consumers if any
+            res["estimated_sum"] = 125.0
+            res["estimated_counts"] = {"even": 2.5, "odd": 2.5, "low": 2.5, "high": 2.5}
+            res["system_bets"] = res["bets"] # fallback
             
-            wheel_indices = [
-                [0, 1, 2, 5, 6],
-                [0, 1, 3, 4, 5],
-                [0, 2, 3, 4, 6],
-                [1, 2, 3, 4, 5],
-                [1, 3, 4, 5, 6],
-                [0, 1, 2, 4, 6]
-            ]
-            
-            e1, e2, e3 = top3_euro
-            euro_pairs = [
-                [e1, e2],
-                [e1, e3],
-                [e2, e3],
-                [e1, e2],
-                [e1, e3],
-                [e2, e3]
-            ]
-            
-            system_bets_list = []
-            for idx, row in enumerate(wheel_indices):
-                m_nums = sorted([top7_nums[i] for i in row])
-                e_nums = sorted(euro_pairs[idx])
-                
-                mean_p_m = float(np.mean([next_main_probs[x-1] for x in m_nums]))
-                mean_p_e = float(np.mean([next_euro_probs[y-1] for y in e_nums]))
-                
-                confidence = (mean_p_m / max_p_m) * 60 + (mean_p_e / max_p_e) * 40
-                
-                system_bets_list.append({
-                    "id": idx + 1,
-                    "profile": f"System Row {idx+1}",
-                    "main_nums": m_nums,
-                    "euro_nums": e_nums,
-                    "confidence": round(confidence, 1)
-                })
-                
-            return jsonify({
-                "estimated_sum": next_pred_sum,
-                "estimated_counts": {
-                    "even": float(next_pred_counts[0]),
-                    "odd": float(next_pred_counts[1]),
-                    "low": float(next_pred_counts[2]),
-                    "high": float(next_pred_counts[3])
-                },
-                "bets": bets_list,
-                "system_bets": system_bets_list
-            })
+            return jsonify(res)
         except Exception as e:
-            return jsonify({"error": f"Failed to generate predictions: {str(e)}"}), 500
+            return jsonify({"error": f"Failed to generate hybrid predictions: {str(e)}"}), 500
 
 @app.route("/api/update", methods=["POST"])
 def api_update():
@@ -953,109 +822,31 @@ def api_tickets_register():
             return jsonify({"error": "Model is not trained yet."}), 400
             
         try:
-            model = tf.keras.models.load_model(MODEL_PATH)
-            scaler_x = joblib.load(train.SCALER_X_PATH)
-            scaler_sum = joblib.load(train.SCALER_SUM_PATH)
-            scaler_counts = joblib.load(train.SCALER_COUNTS_PATH)
+            sys.path.append(os.path.join(os.path.dirname(__file__), "crypto"))
+            import quantum_lstm_hybrid
+            import importlib
+            importlib.reload(quantum_lstm_hybrid)
             
-            latest_date = status["latest_draw_date"]
+            res = quantum_lstm_hybrid.run_hybrid_predictions(count=6)
+            if "error" in res:
+                return jsonify(res), 500
+                
             next_draw_date = status["next_draw_date"]
             
-            draws = database.get_all_draws()
-            df_features = features.compute_draw_features(draws)
-            
-            window_size = 10
-            feature_cols = [
-                'mean', 'std', 'median', 'sum', 'product_diff',
-                'even_count', 'odd_count', 'low_count', 'high_count',
-                'cpr_pp', 'cpr_bc', 'cpr_tc', 'vwap'
-            ]
-            num_features = df_features[feature_cols].values
-            main_nums = df_features[['num1', 'num2', 'num3', 'num4', 'num5']].values
-            euro_nums = df_features[['euro1', 'euro2']].values
-            
-            X_num_last = np.expand_dims(num_features[-window_size:], axis=0).astype(np.float32)
-            X_main_last = np.expand_dims(main_nums[-window_size:], axis=0).astype(np.int32)
-            X_euro_last = np.expand_dims(euro_nums[-window_size:], axis=0).astype(np.int32)
-            
-            X_num_scaled = train.transform_3d(scaler_x, X_num_last)
-            
-            pred_sum_scaled, pred_counts_scaled, pred_main_probs, pred_euro_probs = model.predict(
-                [X_num_scaled, X_main_last, X_euro_last],
-                verbose=0
-            )
-            
-            next_pred_sum = float(scaler_sum.inverse_transform(pred_sum_scaled)[0, 0])
-            next_pred_counts = scaler_counts.inverse_transform(pred_counts_scaled)[0]
-            
-            next_main_probs = pred_main_probs[0]
-            next_euro_probs = pred_euro_probs[0]
-            
-            import hashlib
-            seed_src = latest_date if latest_date else "default_seed_key"
-            seed = int(hashlib.md5(seed_src.encode('utf-8')).hexdigest(), 16) % (2**32)
-            np.random.seed(seed)
-            
-            if ticket_type == "system":
-                top7_idx = np.argsort(next_main_probs)[-7:]
-                top7_nums = sorted([int(x + 1) for x in top7_idx])
-                top3_euro_idx = np.argsort(next_euro_probs)[-3:]
-                top3_euro = sorted([int(x + 1) for x in top3_euro_idx])
-                
-                wheel_indices = [
-                    [0, 1, 2, 5, 6],
-                    [0, 1, 3, 4, 5],
-                    [0, 2, 3, 4, 6],
-                    [1, 2, 3, 4, 5],
-                    [1, 3, 4, 5, 6],
-                    [0, 1, 2, 4, 6]
-                ]
-                
-                e1, e2, e3 = top3_euro
-                euro_pairs = [
-                    [e1, e2],
-                    [e1, e3],
-                    [e2, e3],
-                    [e1, e2],
-                    [e1, e3],
-                    [e2, e3]
-                ]
-                
-                raw_bets = []
-                for idx, row in enumerate(wheel_indices):
-                    m_nums = sorted([top7_nums[i] for i in row])
-                    e_nums = sorted(euro_pairs[idx])
-                    raw_bets.append(((m_nums, e_nums), f"System Row {idx+1}"))
-            else:
-                bets_c = generator.generate_bets(next_main_probs, next_euro_probs, next_pred_sum, next_pred_counts, temperature=0.2, count=2)
-                bets_b = generator.generate_bets(next_main_probs, next_euro_probs, next_pred_sum, next_pred_counts, temperature=1.0, count=2)
-                bets_u = generator.generate_bets(next_main_probs, next_euro_probs, next_pred_sum, next_pred_counts, temperature=2.0, count=2)
-                
-                raw_bets = [
-                    (bets_c[0], "Conservative"),
-                    (bets_c[1], "Conservative"),
-                    (bets_b[0], "Balanced"),
-                    (bets_b[1], "Balanced"),
-                    (bets_u[0], "Unique"),
-                    (bets_u[1], "Unique")
-                ]
-            
-            max_p_m = float(np.max(next_main_probs))
-            max_p_e = float(np.max(next_euro_probs))
-            
-            for idx, (comb, profile) in enumerate(raw_bets):
-                m_nums = [int(x) for x in comb[0]]
-                e_nums = [int(y) for y in comb[1]]
-                
-                mean_p_m = float(np.mean([next_main_probs[x-1] for x in m_nums]))
-                mean_p_e = float(np.mean([next_euro_probs[y-1] for y in e_nums]))
-                confidence = (mean_p_m / max_p_m) * 60 + (mean_p_e / max_p_e) * 40
-                
-                database.save_ticket(next_draw_date, idx + 1, profile, m_nums, e_nums, round(confidence, 1))
+            # Save the 6 hybrid bets to database
+            for b in res["bets"]:
+                database.save_ticket(
+                    next_draw_date,
+                    b["row_id"],
+                    f"Hybrid Row {b['row_id']}",
+                    b["main_nums"],
+                    b["euro_nums"],
+                    b["confidence"]
+                )
                 
             return jsonify({"success": True, "draw_date": next_draw_date})
         except Exception as e:
-            return jsonify({"error": f"Failed to register ticket: {str(e)}"}), 500
+            return jsonify({"error": f"Failed to register hybrid tickets: {str(e)}"}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5080))

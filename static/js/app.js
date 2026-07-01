@@ -713,10 +713,13 @@ function switchGame(gameType) {
     
     const btnHybrid = document.getElementById("tab-hybrid");
     
+    const tabSelector = document.getElementById("ticket-tab-selector");
+    
     if (gameType === 'sportka') {
         setButtonActive(btnSportka, true);
         setButtonActive(btnEuro, false);
         
+        if (tabSelector) tabSelector.style.display = "flex";
         if (btnHybrid) btnHybrid.style.display = "none";
         if (activeTicketTab === 'hybrid') {
             activeTicketTab = 'standard';
@@ -747,7 +750,9 @@ function switchGame(gameType) {
         setButtonActive(btnEuro, true);
         setButtonActive(btnSportka, false);
         
-        if (btnHybrid) btnHybrid.style.display = "inline-block";
+        // Eurojackpot runs ONLY the hybrid-physics prediction portfolio, so hide selector tabs
+        if (tabSelector) tabSelector.style.display = "none";
+        activeTicketTab = 'standard'; // defaults to standard which now receives hybrid
         
         // Show Euro metrics rows
         document.getElementById("row-metric-euro2").style.display = "flex";
