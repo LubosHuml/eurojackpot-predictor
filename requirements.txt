@@ -7,3 +7,5 @@ pandas==3.0.3
 numpy==2.4.6
 requests==2.34.2
 beautifulsoup4==4.12.3
+MetaTrader5
+

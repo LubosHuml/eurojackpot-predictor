@@ -34,7 +34,7 @@ python -m pip install --upgrade pip
 
 echo [SETUP] Installing required AI and quantitative libraries...
 echo This may take 1-2 minutes on first run - please wait...
-pip install flask gunicorn tensorflow-cpu scikit-learn joblib pandas numpy requests beautifulsoup4
+pip install flask gunicorn tensorflow-cpu scikit-learn joblib pandas numpy requests beautifulsoup4 MetaTrader5
 
 echo [OK] All dependencies successfully installed.
 echo.
