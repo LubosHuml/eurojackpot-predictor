@@ -9,7 +9,8 @@ import tensorflow as tf
 import joblib
 import MetaTrader5 as mt5
 
-project_path = "C:\\Users\\lubos\\Desktop\\bybit_meta"
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_path = os.path.dirname(script_dir)
 if project_path not in sys.path:
     sys.path.insert(0, project_path)
 
