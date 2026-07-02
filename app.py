@@ -79,6 +79,8 @@ def start_crypto_scheduler():
                 subprocess.run([sys.executable, "crypto/output_bridge.py"])
                 print("[Scheduler] Checking and executing orders (executor.py)...")
                 subprocess.run([sys.executable, "crypto/executor.py"])
+                print("[Scheduler] Checking and executing MT5 orders (mt5_executor.py)...")
+                subprocess.run([sys.executable, "crypto/mt5_executor.py"])
             except Exception as e:
                 print(f"[Scheduler] Loop execution error: {e}")
                 
@@ -692,6 +694,7 @@ def api_crypto_live():
                         try:
                             subprocess.run([sys.executable, "crypto/output_bridge.py"])
                             subprocess.run([sys.executable, "crypto/executor.py"])
+                            subprocess.run([sys.executable, "crypto/mt5_executor.py"])
                         except Exception:
                             pass
                     threading.Thread(target=refresh_in_bg).start()
@@ -703,6 +706,7 @@ def api_crypto_live():
             import subprocess
             try:
                 subprocess.run([sys.executable, "crypto/executor.py"])
+                subprocess.run([sys.executable, "crypto/mt5_executor.py"])
             except Exception:
                 pass
         threading.Thread(target=run_executor_bg).start()
